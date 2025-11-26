@@ -5,13 +5,24 @@ import { Copy, Check } from "lucide-react";
 import { useState } from "react";
 
 export default function EmbedPanel() {
-    const { config } = useWidget();
+    const { config, projectId } = useWidget();
     const [copied, setCopied] = useState(false);
 
-    // Mock Project ID - in a real app this would come from the project data
-    const projectId = "proj_" + Math.random().toString(36).substr(2, 9);
-    const apiUrl = "https://api.your-saas.com";
-    const cdnUrl = "https://cdn.your-saas.com/widget.js";
+    // Use real project ID from context
+    const isDevelopment = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+    const apiUrl = isDevelopment ? "http://localhost:3000" : "https://makkn.com";
+    const widgetUrl = isDevelopment ? "http://localhost:3000/widget/widget.js" : "https://makkn.com/widget/widget.js";
+
+    // Don't show code until project ID is loaded
+    if (!projectId) {
+        return (
+            <div className="space-y-6 p-4">
+                <div className="text-center py-8">
+                    <p className="text-gray-500">Loading project...</p>
+                </div>
+            </div>
+        );
+    }
 
     const embedCode = `<!-- Chat Widget Embed Code -->
 <your-chat-widget
@@ -21,7 +32,7 @@ export default function EmbedPanel() {
   primary-color="${config.colors.primary}"
 ></your-chat-widget>
 
-<script src="${cdnUrl}" defer></script>`;
+<script src="${widgetUrl}" defer></script>`;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(embedCode);

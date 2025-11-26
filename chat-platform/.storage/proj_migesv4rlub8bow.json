@@ -1,0 +1,31 @@
+{
+  "id": "proj_migesv4rlub8bow",
+  "userId": "shouman.eslam@gmail.com",
+  "name": "My Project 2",
+  "config": {
+    "position": "right",
+    "websiteUrl": "",
+    "colors": {
+      "primary": "#20cf84",
+      "header": "#cf2055",
+      "background": "#ffffff",
+      "foreground": "#000000",
+      "input": "#e5e7eb"
+    },
+    "branding": {
+      "chatIcon": null,
+      "agentIcon": null,
+      "userIcon": null,
+      "showChatIcon": true,
+      "showAgentAvatar": true,
+      "showUserAvatar": true
+    },
+    "text": {
+      "headerTitle": "Chat Widget",
+      "welcomeMessage": "Hi! How can I help you?",
+      "placeholder": "Message..."
+    }
+  },
+  "createdAt": "2025-11-26T19:40:12.315Z",
+  "updatedAt": "2025-11-26T19:59:00.310Z"
+}

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useCallback } from "react";
+import { getProject, saveProject as saveProjectStorage, Project } from "@/lib/storage";
 
 export interface WidgetConfig {
     position: "left" | "right";
@@ -28,11 +29,16 @@ export interface WidgetConfig {
 }
 
 interface WidgetContextType {
+    projectId: string | null;
+    projectName: string;
     config: WidgetConfig;
+    hasUnsavedChanges: boolean;
     updateConfig: (updates: Partial<WidgetConfig>) => void;
     updateColors: (updates: Partial<WidgetConfig["colors"]>) => void;
     updateBranding: (updates: Partial<WidgetConfig["branding"]>) => void;
     updateText: (updates: Partial<WidgetConfig["text"]>) => void;
+    loadProject: (projectId: string) => void;
+    saveProject: () => void;
 }
 
 const defaultConfig: WidgetConfig = {
@@ -63,27 +69,87 @@ const defaultConfig: WidgetConfig = {
 const WidgetContext = createContext<WidgetContextType | undefined>(undefined);
 
 export function WidgetProvider({ children }: { children: React.ReactNode }) {
+    const [projectId, setProjectId] = useState<string | null>(null);
+    const [projectName, setProjectName] = useState<string>("Untitled Project");
     const [config, setConfig] = useState<WidgetConfig>(defaultConfig);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [initialConfig, setInitialConfig] = useState<WidgetConfig>(defaultConfig);
 
-    const updateConfig = (updates: Partial<WidgetConfig>) => {
+    const updateConfig = useCallback((updates: Partial<WidgetConfig>) => {
         setConfig((prev) => ({ ...prev, ...updates }));
-    };
+        setHasUnsavedChanges(true);
+    }, []);
 
-    const updateColors = (updates: Partial<WidgetConfig["colors"]>) => {
+    const updateColors = useCallback((updates: Partial<WidgetConfig["colors"]>) => {
         setConfig((prev) => ({ ...prev, colors: { ...prev.colors, ...updates } }));
-    };
+        setHasUnsavedChanges(true);
+    }, []);
 
-    const updateBranding = (updates: Partial<WidgetConfig["branding"]>) => {
+    const updateBranding = useCallback((updates: Partial<WidgetConfig["branding"]>) => {
         setConfig((prev) => ({ ...prev, branding: { ...prev.branding, ...updates } }));
-    };
+        setHasUnsavedChanges(true);
+    }, []);
 
-    const updateText = (updates: Partial<WidgetConfig["text"]>) => {
+    const updateText = useCallback((updates: Partial<WidgetConfig["text"]>) => {
         setConfig((prev) => ({ ...prev, text: { ...prev.text, ...updates } }));
-    };
+        setHasUnsavedChanges(true);
+    }, []);
+
+    const loadProject = useCallback((id: string) => {
+        console.log("Loading project:", id);
+        const project = getProject(id);
+        console.log("Project loaded:", project);
+        if (project) {
+            setProjectId(project.id);
+            setProjectName(project.name);
+            setConfig(project.config);
+            setInitialConfig(project.config);
+            setHasUnsavedChanges(false);
+
+            // Immediately save to server storage to make it available for API
+            console.log("🔄 Syncing project to server storage for API access");
+            saveProjectStorage(project);
+        } else {
+            console.error("Project not found:", id);
+        }
+    }, []);
+
+    const saveProject = useCallback(() => {
+        if (!projectId) {
+            console.error("No project ID to save");
+            return;
+        }
+
+        console.log("Saving project:", projectId);
+        const project = getProject(projectId);
+        if (project) {
+            const updatedProject: Project = {
+                ...project,
+                config,
+            };
+            saveProjectStorage(updatedProject);
+            setInitialConfig(config);
+            setHasUnsavedChanges(false);
+            console.log("Project saved successfully");
+        } else {
+            console.error("Project not found for saving:", projectId);
+        }
+    }, [projectId, config]);
 
     return (
         <WidgetContext.Provider
-            value={{ config, updateConfig, updateColors, updateBranding, updateText }}
+            value={{
+                projectId,
+                projectName,
+                config,
+                hasUnsavedChanges,
+                updateConfig,
+                updateColors,
+                updateBranding,
+                updateText,
+                loadProject,
+                saveProject,
+            }}
         >
             {children}
         </WidgetContext.Provider>

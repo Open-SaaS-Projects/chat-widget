@@ -5,12 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Plus, MessageSquare } from "lucide-react";
 import Link from "next/link";
-
-interface Project {
-    id: string;
-    name: string;
-    createdAt: string;
-}
+import { getUserProjects, createProject as createProjectStorage, Project } from "@/lib/storage";
+import Logo from "@/components/ui/Logo";
 
 export default function DashboardPage() {
     const { user, loading } = useAuth();
@@ -24,22 +20,47 @@ export default function DashboardPage() {
     }, [user, loading, router]);
 
     useEffect(() => {
-        // Mock fetching projects
-        const storedProjects = localStorage.getItem("chat_platform_projects");
-        if (storedProjects) {
-            setProjects(JSON.parse(storedProjects));
+        if (user) {
+            // Load projects from storage
+            const userProjects = getUserProjects(user.email);
+            setProjects(userProjects);
         }
-    }, []);
+    }, [user]);
 
     const createProject = () => {
-        const newProject: Project = {
-            id: crypto.randomUUID(),
-            name: `My Project ${projects.length + 1}`,
-            createdAt: new Date().toISOString(),
-        };
-        const updatedProjects = [...projects, newProject];
-        setProjects(updatedProjects);
-        localStorage.setItem("chat_platform_projects", JSON.stringify(updatedProjects));
+        if (!user) return;
+
+        // Create project with default configuration
+        const newProject = createProjectStorage(
+            user.email,
+            `My Project ${projects.length + 1}`,
+            {
+                position: "right",
+                websiteUrl: "",
+                colors: {
+                    primary: "#6320CE",
+                    header: "#6320CE",
+                    background: "#ffffff",
+                    foreground: "#000000",
+                    input: "#e5e7eb",
+                },
+                branding: {
+                    chatIcon: null,
+                    agentIcon: null,
+                    userIcon: null,
+                    showChatIcon: true,
+                    showAgentAvatar: true,
+                    showUserAvatar: true,
+                },
+                text: {
+                    headerTitle: "Chat Widget",
+                    welcomeMessage: "Hi! How can I help you?",
+                    placeholder: "Message...",
+                },
+            }
+        );
+
+        setProjects([...projects, newProject]);
         router.push(`/project/${newProject.id}`);
     };
 
@@ -51,7 +72,7 @@ export default function DashboardPage() {
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             <header className="bg-white dark:bg-gray-800 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+                    <Logo />
                     <div className="flex items-center gap-4">
                         <span className="text-sm text-gray-600 dark:text-gray-300">
                             Welcome, {user.name}
@@ -96,25 +117,22 @@ export default function DashboardPage() {
                             <Link
                                 key={project.id}
                                 href={`/project/${project.id}`}
-                                className="block p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow group"
+                                className="block p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
                             >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        <div className="flex-shrink-0">
-                                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                                <MessageSquare className="h-6 w-6 text-primary" />
-                                            </div>
-                                        </div>
-                                        <div className="ml-4">
-                                            <h3 className="text-lg font-medium text-gray-900 dark:text-white group-hover:text-primary transition-colors">
-                                                {project.name}
-                                            </h3>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                Created {new Date(project.createdAt).toLocaleDateString()}
-                                            </p>
-                                        </div>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="p-2 bg-primary/10 rounded-lg">
+                                        <MessageSquare className="h-6 w-6 text-primary" />
                                     </div>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                        {new Date(project.updatedAt).toLocaleDateString()}
+                                    </span>
                                 </div>
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                                    {project.name}
+                                </h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    ID: {project.id}
+                                </p>
                             </Link>
                         ))}
                     </div>

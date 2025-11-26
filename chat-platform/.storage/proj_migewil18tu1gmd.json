@@ -1,0 +1,31 @@
+{
+  "id": "proj_migewil18tu1gmd",
+  "userId": "shouman.eslam@gmail.com",
+  "name": "My Project 3",
+  "config": {
+    "position": "right",
+    "websiteUrl": "",
+    "colors": {
+      "primary": "#72599b",
+      "header": "#092a16",
+      "background": "#5b1f1f",
+      "foreground": "#000000",
+      "input": "#e5e7eb"
+    },
+    "branding": {
+      "chatIcon": "blob:http://localhost:3000/7b491829-df19-4b5a-97cb-2fcf85ec603e",
+      "agentIcon": null,
+      "userIcon": null,
+      "showChatIcon": true,
+      "showAgentAvatar": true,
+      "showUserAvatar": true
+    },
+    "text": {
+      "headerTitle": "Chatty",
+      "welcomeMessage": "hello hello",
+      "placeholder": "test"
+    }
+  },
+  "createdAt": "2025-11-26T19:43:02.677Z",
+  "updatedAt": "2025-11-26T19:51:11.523Z"
+}
