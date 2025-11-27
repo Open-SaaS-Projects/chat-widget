@@ -1,11 +1,12 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 import os
 import json
 from services.kb_service import KBService
 from services.llm_service import LLMService
+from services.session_service import SessionService
 
 app = FastAPI(
     title="AI Agent Service",
@@ -25,10 +26,12 @@ app.add_middleware(
 # Services
 kb_service = KBService()
 llm_service = LLMService()
+session_service = SessionService()
 
 class ChatRequest(BaseModel):
     query: str
     project_id: str
+    session_id: Optional[str] = "default"
     history: List[Dict[str, str]] = []
 
 @app.get("/")
@@ -44,21 +47,32 @@ async def health_check():
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    # 1. Retrieve context from Knowledge Base
+    # 1. Get conversation history from Redis
+    stored_history = session_service.get_conversation_history(request.project_id, request.session_id)
+    
+    # Use stored history if available, otherwise use provided history
+    conversation_history = stored_history if stored_history else request.history
+    
+    # 2. Retrieve context from Knowledge Base
     context = await kb_service.get_relevant_context(request.query, request.project_id)
     
-    # 2. Generate response using LLM
-    response = await llm_service.generate_response(request.query, context, request.history)
+    # 3. Generate response using LLM with conversation history
+    response = await llm_service.generate_response(request.query, context, conversation_history)
+    
+    # 4. Update conversation history in Redis
+    session_service.add_message_to_history(request.project_id, request.session_id, "user", request.query)
+    session_service.add_message_to_history(request.project_id, request.session_id, "assistant", response)
     
     return {
         "response": response,
-        "context_used": context
+        "context_used": context,
+        "session_id": request.session_id
     }
 
 @app.websocket("/ws/chat/{project_id}")
 async def websocket_endpoint(websocket: WebSocket, project_id: str):
     await websocket.accept()
-    history = [] # In a real app, load this from Redis/DB
+    session_id = "default"  # Could be passed as query param
     
     try:
         while True:
@@ -69,6 +83,9 @@ async def websocket_endpoint(websocket: WebSocket, project_id: str):
             
             if not query:
                 continue
+            
+            # Get conversation history
+            history = session_service.get_conversation_history(project_id, session_id)
                 
             # 1. Retrieve context
             context = await kb_service.get_relevant_context(query, project_id)
@@ -89,9 +106,9 @@ async def websocket_endpoint(websocket: WebSocket, project_id: str):
                 "context_used": context
             }))
             
-            # Update history (simple in-memory for this session)
-            history.append({"role": "user", "content": query})
-            history.append({"role": "assistant", "content": full_response})
+            # Update history in Redis
+            session_service.add_message_to_history(project_id, session_id, "user", query)
+            session_service.add_message_to_history(project_id, session_id, "assistant", full_response)
             
     except WebSocketDisconnect:
         print(f"Client disconnected from project {project_id}")
