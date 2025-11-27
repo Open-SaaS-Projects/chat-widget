@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { Plus, MessageSquare } from "lucide-react";
+import { Plus, MessageSquare, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { getUserProjects, createProject as createProjectStorage, Project } from "@/lib/storage";
+import { getUserProjects, createProject as createProjectStorage, deleteProject, Project } from "@/lib/storage";
 import Logo from "@/components/ui/Logo";
 
 export default function DashboardPage() {
@@ -64,6 +64,18 @@ export default function DashboardPage() {
         router.push(`/project/${newProject.id}`);
     };
 
+    const handleDeleteProject = (e: React.MouseEvent, projectId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!user) return;
+
+        if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+            deleteProject(user.email, projectId);
+            setProjects(projects.filter(p => p.id !== projectId));
+        }
+    };
+
     if (loading || !user) {
         return null; // Or a loading spinner
     }
@@ -117,15 +129,24 @@ export default function DashboardPage() {
                             <Link
                                 key={project.id}
                                 href={`/project/${project.id}`}
-                                className="block p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
+                                className="block p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow group relative"
                             >
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="p-2 bg-primary/10 rounded-lg">
                                         <MessageSquare className="h-6 w-6 text-primary" />
                                     </div>
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                                        {new Date(project.updatedAt).toLocaleDateString()}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                                            {new Date(project.updatedAt).toLocaleDateString()}
+                                        </span>
+                                        <button
+                                            onClick={(e) => handleDeleteProject(e, project.id)}
+                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                            title="Delete Project"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
                                 </div>
                                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                                     {project.name}

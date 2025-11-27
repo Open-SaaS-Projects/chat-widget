@@ -1,0 +1,31 @@
+{
+  "id": "proj_mihe3zjn1vx8ah5",
+  "userId": "shouman.eslam@gmail.com",
+  "name": "My Project 4",
+  "config": {
+    "position": "right",
+    "websiteUrl": "",
+    "colors": {
+      "primary": "#6320CE",
+      "header": "#9820cf",
+      "background": "#ffffff",
+      "foreground": "#000000",
+      "input": "#e5e7eb"
+    },
+    "branding": {
+      "chatIcon": null,
+      "agentIcon": null,
+      "userIcon": null,
+      "showChatIcon": true,
+      "showAgentAvatar": true,
+      "showUserAvatar": true
+    },
+    "text": {
+      "headerTitle": "Chat Widget makkn",
+      "welcomeMessage": "Hi! How can I help you?",
+      "placeholder": "Message..."
+    }
+  },
+  "createdAt": "2025-11-27T12:08:37.811Z",
+  "updatedAt": "2025-11-27T12:41:05.373Z"
+}

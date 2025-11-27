@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # Frontend (Existing Next.js App)
+  frontend:
+    build:
+      context: ./chat-platform
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - KNOWLEDGE_BASE_API_URL=http://knowledge-base:8000
+      - AI_AGENT_API_URL=http://ai-agent:8001
+    depends_on:
+      - knowledge-base
+      - ai-agent
+    networks:
+      - makkn-network
+
+  # Microservice 1: Knowledge Base Service
+  knowledge-base:
+    build:
+      context: ./knowledge-base-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/makkn_db
+      - REDIS_URL=redis://redis:6379/0
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - makkn-network
+    volumes:
+      - ./knowledge-base-service:/app
+
+  # Microservice 2: AI Agent Service
+  ai-agent:
+    build:
+      context: ./ai-agent-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/makkn_db
+      - REDIS_URL=redis://redis:6379/0
+      - KNOWLEDGE_BASE_URL=http://knowledge-base:8000
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - LITELLM_MODEL=gemini/gemini-2.5-flash # Using 2.5 Flash as standard, easy to change
+    depends_on:
+      - postgres
+      - redis
+      - knowledge-base
+    networks:
+      - makkn-network
+    volumes:
+      - ./ai-agent-service:/app
+
+  # Database (PostgreSQL with pgvector)
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=makkn_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - makkn-network
+
+  # Redis for Caching & Pub/Sub
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - makkn-network
+
+networks:
+  makkn-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

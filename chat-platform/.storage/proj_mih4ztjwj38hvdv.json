@@ -1,19 +1,19 @@
 {
-  "id": "proj_migewil18tu1gmd",
+  "id": "proj_mih4ztjwj38hvdv",
   "userId": "shouman.eslam@gmail.com",
   "name": "My Project 3",
   "config": {
     "position": "right",
     "websiteUrl": "",
     "colors": {
-      "primary": "#715997",
-      "header": "#092a16",
-      "background": "#5b1f1f",
+      "primary": "#6320CE",
+      "header": "#6320CE",
+      "background": "#ffffff",
       "foreground": "#000000",
       "input": "#e5e7eb"
     },
     "branding": {
-      "chatIcon": "blob:http://localhost:3000/7b491829-df19-4b5a-97cb-2fcf85ec603e",
+      "chatIcon": null,
       "agentIcon": null,
       "userIcon": null,
       "showChatIcon": true,
@@ -21,11 +21,11 @@
       "showUserAvatar": true
     },
     "text": {
-      "headerTitle": "Chatty",
-      "welcomeMessage": "hello hello",
-      "placeholder": "test"
+      "headerTitle": "Makkn",
+      "welcomeMessage": "Hi! How can I help you?",
+      "placeholder": "Message..."
     }
   },
-  "createdAt": "2025-11-26T19:43:02.677Z",
-  "updatedAt": "2025-11-27T07:17:36.455Z"
+  "createdAt": "2025-11-27T07:53:26.876Z",
+  "updatedAt": "2025-11-27T12:08:03.331Z"
 }

@@ -7,106 +7,106 @@
  */
 
 (function () {
-    'use strict';
+  'use strict';
 
-    // Define the custom element
-    class ChatWidget extends HTMLElement {
-        constructor() {
-            super();
-            this.attachShadow({ mode: 'open' });
-            this.isOpen = false;
-            this.config = null;
-        }
+  // Define the custom element
+  class ChatWidget extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: 'open' });
+      this.isOpen = false;
+      this.config = null;
+    }
 
-        connectedCallback() {
-            // Get attributes
-            const projectId = this.getAttribute('project-id');
-            const apiUrl = this.getAttribute('api-url') || 'https://makkn.com';
-            const position = this.getAttribute('position') || 'right';
-            const primaryColor = this.getAttribute('primary-color') || '#6320CE';
+    connectedCallback() {
+      // Get attributes
+      const projectId = this.getAttribute('project-id');
+      const apiUrl = this.getAttribute('api-url') || 'https://makkn.com';
+      const position = this.getAttribute('position') || 'right';
+      const primaryColor = this.getAttribute('primary-color') || '#6320CE';
 
-            // Fetch configuration
-            this.fetchConfig(apiUrl, projectId, position, primaryColor);
-        }
+      // Fetch configuration
+      this.fetchConfig(apiUrl, projectId, position, primaryColor);
+    }
 
-        async fetchConfig(apiUrl, projectId, position, primaryColor) {
-            console.log('🔧 Widget: Fetching config from:', `${apiUrl}/api/widget/${projectId}`);
-            console.log('🔧 Widget: Fallback values - position:', position, 'primaryColor:', primaryColor);
+    async fetchConfig(apiUrl, projectId, position, primaryColor) {
+      console.log('🔧 Widget: Fetching config from:', `${apiUrl}/api/widget/${projectId}`);
+      console.log('🔧 Widget: Fallback values - position:', position, 'primaryColor:', primaryColor);
 
-            try {
-                const response = await fetch(`${apiUrl}/api/widget/${projectId}`);
-                console.log('🔧 Widget: API response status:', response.status);
+      try {
+        const response = await fetch(`${apiUrl}/api/widget/${projectId}`);
+        console.log('🔧 Widget: API response status:', response.status);
 
-                if (response.ok) {
-                    this.config = await response.json();
-                    console.log('✅ Widget: Config loaded from API:', this.config);
-                } else {
-                    console.warn('⚠️ Widget: API failed, using fallback config');
-                    // Fallback to attributes if API fails
-                    this.config = {
-                        position: position,
-                        colors: {
-                            primary: primaryColor,
-                            header: primaryColor,
-                            background: '#ffffff',
-                            foreground: '#000000',
-                            input: '#e5e7eb'
-                        },
-                        branding: {
-                            chatIcon: null,
-                            agentIcon: null,
-                            userIcon: null,
-                            showChatIcon: true,
-                            showAgentAvatar: true,
-                            showUserAvatar: true
-                        },
-                        text: {
-                            headerTitle: 'Chat Widget',
-                            welcomeMessage: 'Hi! How can I help you?',
-                            placeholder: 'Message...'
-                        }
-                    };
-                }
-            } catch (error) {
-                console.error('❌ Widget: Failed to fetch widget config:', error);
-                // Use fallback config
-                this.config = {
-                    position: position,
-                    colors: {
-                        primary: primaryColor,
-                        header: primaryColor,
-                        background: '#ffffff',
-                        foreground: '#000000',
-                        input: '#e5e7eb'
-                    },
-                    branding: {
-                        chatIcon: null,
-                        agentIcon: null,
-                        userIcon: null,
-                        showChatIcon: true,
-                        showAgentAvatar: true,
-                        showUserAvatar: true
-                    },
-                    text: {
-                        headerTitle: 'Chat Widget',
-                        welcomeMessage: 'Hi! How can I help you?',
-                        placeholder: 'Message...'
-                    }
-                };
+        if (response.ok) {
+          this.config = await response.json();
+          console.log('✅ Widget: Config loaded from API:', this.config);
+        } else {
+          console.warn('⚠️ Widget: API failed, using fallback config');
+          // Fallback to attributes if API fails
+          this.config = {
+            position: position,
+            colors: {
+              primary: primaryColor,
+              header: primaryColor,
+              background: '#ffffff',
+              foreground: '#000000',
+              input: '#e5e7eb'
+            },
+            branding: {
+              chatIcon: null,
+              agentIcon: null,
+              userIcon: null,
+              showChatIcon: true,
+              showAgentAvatar: true,
+              showUserAvatar: true
+            },
+            text: {
+              headerTitle: 'Chat Widget',
+              welcomeMessage: 'Hi! How can I help you?',
+              placeholder: 'Message...'
             }
-
-            console.log('🎨 Widget: Final config being used:', this.config);
-            this.render();
+          };
         }
+      } catch (error) {
+        console.error('❌ Widget: Failed to fetch widget config:', error);
+        // Use fallback config
+        this.config = {
+          position: position,
+          colors: {
+            primary: primaryColor,
+            header: primaryColor,
+            background: '#ffffff',
+            foreground: '#000000',
+            input: '#e5e7eb'
+          },
+          branding: {
+            chatIcon: null,
+            agentIcon: null,
+            userIcon: null,
+            showChatIcon: true,
+            showAgentAvatar: true,
+            showUserAvatar: true
+          },
+          text: {
+            headerTitle: 'Chat Widget',
+            welcomeMessage: 'Hi! How can I help you?',
+            placeholder: 'Message...'
+          }
+        };
+      }
 
-        render() {
-            if (!this.config) return;
+      console.log('🎨 Widget: Final config being used:', this.config);
+      this.render();
+    }
 
-            const { position, colors, branding, text } = this.config;
-            const positionClass = position === 'left' ? 'left-6' : 'right-6';
-            const alignClass = position === 'left' ? 'items-start' : 'items-end';
+    render() {
+      if (!this.config) return;
 
-            this.shadowRoot.innerHTML = `
+      const { position, colors, branding, text } = this.config;
+      const positionClass = position === 'left' ? 'left-6' : 'right-6';
+      const alignClass = position === 'left' ? 'items-start' : 'items-end';
+
+      this.shadowRoot.innerHTML = `
         <style>
           ${this.getStyles()}
         </style>
@@ -117,13 +117,13 @@
         </div>
       `;
 
-            this.attachEventListeners();
-        }
+      this.attachEventListeners();
+    }
 
-        getStyles() {
-            const { colors } = this.config;
+    getStyles() {
+      const { colors } = this.config;
 
-            return `
+      return `
         * {
           box-sizing: border-box;
           margin: 0;
@@ -342,11 +342,33 @@
           background: #e5e7eb;
         }
 
+        .send-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
         .branding {
           margin-top: 0.5rem;
           text-align: center;
           font-size: 0.625rem;
           color: #9ca3af;
+        }
+
+        .typing-dot {
+          display: inline-block;
+          animation: typing 1.4s infinite ease-in-out both;
+          margin: 0 1px;
+          font-weight: bold;
+          font-size: 1.2rem;
+          line-height: 0.5;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+          0%, 80%, 100% { transform: scale(0); }
+          40% { transform: scale(1); }
         }
 
         .toggle-btn {
@@ -408,23 +430,23 @@
           }
         }
       `;
-        }
+    }
 
-        getChatWindow() {
-            const { colors, branding, text } = this.config;
+    getChatWindow() {
+      const { colors, branding, text } = this.config;
 
-            return `
+      return `
         <div class="chat-window">
           <div class="chat-header">
             <div class="chat-header-content">
               ${branding.showAgentAvatar ? `
                 <div class="avatar">
                   ${branding.agentIcon
-                        ? `<img src="${branding.agentIcon}" alt="Agent" />`
-                        : `<svg class="avatar-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            ? `<img src="${branding.agentIcon}" alt="Agent" />`
+            : `<svg class="avatar-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>`
-                    }
+          }
                 </div>
               ` : ''}
               <div class="header-text">
@@ -439,16 +461,16 @@
             </button>
           </div>
 
-          <div class="messages">
+          <div class="messages" id="chat-messages">
             <div class="message agent">
               ${branding.showAgentAvatar ? `
                 <div class="message-avatar">
                   ${branding.agentIcon
-                        ? `<img src="${branding.agentIcon}" alt="Agent" />`
-                        : `<svg class="message-avatar-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            ? `<img src="${branding.agentIcon}" alt="Agent" />`
+            : `<svg class="message-avatar-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>`
-                    }
+          }
                 </div>
               ` : ''}
               <div class="message-content">${text.welcomeMessage}</div>
@@ -473,47 +495,175 @@
           </div>
         </div>
       `;
-        }
+    }
 
-        getToggleButton() {
-            const { branding } = this.config;
+    getToggleButton() {
+      const { branding } = this.config;
 
-            return `
+      return `
         <button class="toggle-btn" id="toggle-btn">
           <div class="toggle-icon">
             ${branding.showChatIcon && branding.chatIcon
-                    ? `<img src="${branding.chatIcon}" alt="Chat" />`
-                    : `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          ? `<img src="${branding.chatIcon}" alt="Chat" />`
+          : `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>`
-                }
+        }
           </div>
         </button>
       `;
-        }
-
-        attachEventListeners() {
-            const toggleBtn = this.shadowRoot.getElementById('toggle-btn');
-            const closeBtn = this.shadowRoot.getElementById('close-btn');
-
-            if (toggleBtn) {
-                toggleBtn.addEventListener('click', () => {
-                    this.isOpen = !this.isOpen;
-                    this.render();
-                });
-            }
-
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    this.isOpen = false;
-                    this.render();
-                });
-            }
-        }
     }
 
-    // Register the custom element
-    if (!customElements.get('your-chat-widget')) {
-        customElements.define('your-chat-widget', ChatWidget);
+    attachEventListeners() {
+      const toggleBtn = this.shadowRoot.getElementById('toggle-btn');
+      const closeBtn = this.shadowRoot.getElementById('close-btn');
+      const sendBtn = this.shadowRoot.getElementById('send-btn');
+      const inputField = this.shadowRoot.getElementById('message-input');
+
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+          this.isOpen = !this.isOpen;
+          this.render();
+        });
+      }
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          this.isOpen = false;
+          this.render();
+        });
+      }
+
+      if (sendBtn && inputField) {
+        const handleSend = () => {
+          const message = inputField.value.trim();
+          if (message) {
+            this.sendMessage(message);
+            inputField.value = '';
+          }
+        };
+
+        sendBtn.addEventListener('click', handleSend);
+        inputField.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            handleSend();
+          }
+        });
+      }
     }
+
+    async sendMessage(message) {
+      const messagesContainer = this.shadowRoot.getElementById('chat-messages');
+      const apiUrl = this.getAttribute('api-url') || 'https://makkn.com';
+      const projectId = this.getAttribute('project-id');
+      const { branding } = this.config;
+
+      // Add user message
+      const userMsgDiv = document.createElement('div');
+      userMsgDiv.className = 'message user';
+      userMsgDiv.innerHTML = `
+                ${branding.showUserAvatar ? `
+                    <div class="message-avatar">
+                        ${branding.userIcon
+            ? `<img src="${branding.userIcon}" alt="User" />`
+            : `<svg class="message-avatar-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>`
+          }
+                    </div>
+                ` : ''}
+                <div class="message-content">${message}</div>
+            `;
+      messagesContainer.appendChild(userMsgDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      // Add loading state
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'message agent loading';
+      loadingDiv.innerHTML = `
+                ${branding.showAgentAvatar ? `
+                    <div class="message-avatar">
+                        ${branding.agentIcon
+            ? `<img src="${branding.agentIcon}" alt="Agent" />`
+            : `<svg class="message-avatar-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>`
+          }
+                    </div>
+                ` : ''}
+                <div class="message-content">
+                    <span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span>
+                </div>
+            `;
+      messagesContainer.appendChild(loadingDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      try {
+        const response = await fetch(`${apiUrl}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: message,
+            project_id: projectId
+          })
+        });
+
+        // Remove loading
+        messagesContainer.removeChild(loadingDiv);
+
+        if (response.ok) {
+          const data = await response.json();
+          const botMsgDiv = document.createElement('div');
+          botMsgDiv.className = 'message agent';
+          botMsgDiv.innerHTML = `
+                        ${branding.showAgentAvatar ? `
+                            <div class="message-avatar">
+                                ${branding.agentIcon
+                ? `<img src="${branding.agentIcon}" alt="Agent" />`
+                : `<svg class="message-avatar-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                  </svg>`
+              }
+                            </div>
+                        ` : ''}
+                        <div class="message-content">${data.response}</div>
+                    `;
+          messagesContainer.appendChild(botMsgDiv);
+        } else {
+          throw new Error('Failed to get response');
+        }
+      } catch (error) {
+        console.error('Chat error:', error);
+        if (loadingDiv.parentNode) {
+          messagesContainer.removeChild(loadingDiv);
+        }
+
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'message agent error';
+        errorDiv.innerHTML = `
+                    ${branding.showAgentAvatar ? `
+                        <div class="message-avatar">
+                            ${branding.agentIcon
+              ? `<img src="${branding.agentIcon}" alt="Agent" />`
+              : `<svg class="message-avatar-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>`
+            }
+                        </div>
+                    ` : ''}
+                    <div class="message-content" style="background: #fee2e2; color: #991b1b;">
+                        Sorry, I encountered an error. Please try again.
+                    </div>
+                `;
+        messagesContainer.appendChild(errorDiv);
+      }
+
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+  }
+
+  // Register the custom element
+  if (!customElements.get('your-chat-widget')) {
+    customElements.define('your-chat-widget', ChatWidget);
+  }
 })();

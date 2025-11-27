@@ -1,0 +1,31 @@
+{
+  "id": "proj_mih372x48f3r3b3",
+  "userId": "shouman.eslam@gmail.com",
+  "name": "My Project 4",
+  "config": {
+    "position": "right",
+    "websiteUrl": "http://localhost:3000/widget/test.html",
+    "colors": {
+      "primary": "#6320CE",
+      "header": "#6320CE",
+      "background": "#ffffff",
+      "foreground": "#000000",
+      "input": "#e5e7eb"
+    },
+    "branding": {
+      "chatIcon": null,
+      "agentIcon": null,
+      "userIcon": null,
+      "showChatIcon": true,
+      "showAgentAvatar": true,
+      "showUserAvatar": true
+    },
+    "text": {
+      "headerTitle": "MAKKN",
+      "welcomeMessage": "HI hello",
+      "placeholder": "test"
+    }
+  },
+  "createdAt": "2025-11-27T07:03:06.376Z",
+  "updatedAt": "2025-11-27T07:20:11.086Z"
+}

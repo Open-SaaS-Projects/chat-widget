@@ -1,0 +1,53 @@
+MAKKN Platform Technical Documentation
+
+System Requirements:
+- Node.js version 20 or higher
+- PostgreSQL 14 or higher with pgvector extension
+- Redis 6 or higher
+- Modern web browser (Chrome, Firefox, Safari, Edge)
+
+Installation Steps:
+1. Clone the repository from GitHub
+2. Install dependencies using npm install
+3. Configure environment variables in .env file
+4. Run database migrations
+5. Start the development server
+
+API Endpoints:
+The MAKKN platform provides the following REST API endpoints:
+
+Knowledge Base Service (Port 8000):
+- POST /upload - Upload documents to the knowledge base
+- POST /query - Query the knowledge base for relevant information
+- GET /health - Check service health status
+
+AI Agent Service (Port 8001):
+- POST /chat - Send a message to the AI agent
+- WebSocket /ws/chat/{project_id} - Real-time chat with streaming responses
+- GET /health - Check service health status
+
+Configuration:
+You can customize the MAKKN widget by modifying the following settings:
+- Widget position (bottom-right, bottom-left, top-right, top-left)
+- Color scheme (primary color, secondary color, text color)
+- Welcome message
+- Placeholder text
+- Response delay
+- Maximum conversation history
+
+Troubleshooting:
+If you encounter issues, try the following:
+1. Clear browser cache and cookies
+2. Check console for error messages
+3. Verify API key is valid
+4. Ensure all services are running
+5. Check network connectivity
+6. Review server logs for errors
+
+Best Practices:
+- Upload documents in supported formats (PDF, TXT, DOCX, MD)
+- Keep document sizes under 10MB for optimal performance
+- Use descriptive filenames for better organization
+- Regularly update the knowledge base with new information
+- Monitor API usage to stay within quota limits
+- Test the chat widget in incognito mode before deploying

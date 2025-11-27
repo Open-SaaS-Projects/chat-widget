@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { ArrowLeft, Monitor, Smartphone, Save, Check } from "lucide-react";
+import { ArrowLeft, Monitor, Smartphone, Save, Check, Brain } from "lucide-react";
 import ConfigurationPanel from "@/components/editor/ConfigurationPanel";
 import PreviewArea from "@/components/preview/PreviewArea";
 import { useWidget } from "@/context/WidgetContext";
@@ -98,7 +98,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
             {/* Main Content */}
             <div className="flex-1 flex overflow-hidden">
                 {/* Sidebar - Configuration */}
-                <div className="w-[400px] bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+                <div className="w-[500px] bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
                     <ConfigurationPanel />
                 </div>
 
