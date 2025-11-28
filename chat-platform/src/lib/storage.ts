@@ -107,6 +107,21 @@ export function saveProject(project: Project): void {
     console.log("✅ Project saved successfully");
 }
 
+// Rename a project
+export function renameProject(projectId: string, newName: string): Project | null {
+    const project = getProject(projectId);
+    if (!project) return null;
+
+    const updatedProject: Project = {
+        ...project,
+        name: newName,
+        updatedAt: new Date().toISOString(),
+    };
+
+    saveProject(updatedProject);
+    return updatedProject;
+}
+
 // Delete a project
 export function deleteProject(userId: string, projectId: string): void {
     if (typeof window !== 'undefined') {

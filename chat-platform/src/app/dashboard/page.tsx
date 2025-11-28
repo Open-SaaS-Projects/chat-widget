@@ -3,15 +3,17 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { Plus, MessageSquare, Trash2 } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Edit2, Check, X } from "lucide-react";
 import Link from "next/link";
-import { getUserProjects, createProject as createProjectStorage, deleteProject, Project } from "@/lib/storage";
+import { getUserProjects, createProject as createProjectStorage, deleteProject, renameProject, Project } from "@/lib/storage";
 import Logo from "@/components/ui/Logo";
 
 export default function DashboardPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
     const [projects, setProjects] = useState<Project[]>([]);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingName, setEditingName] = useState<string>("");
 
     useEffect(() => {
         if (!loading && !user) {
@@ -74,6 +76,34 @@ export default function DashboardPage() {
             deleteProject(user.email, projectId);
             setProjects(projects.filter(p => p.id !== projectId));
         }
+    };
+
+    const startRename = (e: React.MouseEvent, project: Project) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setEditingId(project.id);
+        setEditingName(project.name);
+    };
+
+    const cancelRename = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setEditingId(null);
+        setEditingName("");
+    };
+
+    const saveRename = (e: React.MouseEvent, projectId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!user || !editingName.trim()) return;
+
+        const updatedProject = renameProject(projectId, editingName.trim());
+        if (updatedProject) {
+            setProjects(projects.map(p => p.id === projectId ? updatedProject : p));
+        }
+        setEditingId(null);
+        setEditingName("");
     };
 
     if (loading || !user) {
@@ -140,6 +170,13 @@ export default function DashboardPage() {
                                             {new Date(project.updatedAt).toLocaleDateString()}
                                         </span>
                                         <button
+                                            onClick={(e) => startRename(e, project)}
+                                            className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                            title="Rename Project"
+                                        >
+                                            <Edit2 className="h-4 w-4" />
+                                        </button>
+                                        <button
                                             onClick={(e) => handleDeleteProject(e, project.id)}
                                             className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                                             title="Delete Project"
@@ -148,9 +185,40 @@ export default function DashboardPage() {
                                         </button>
                                     </div>
                                 </div>
-                                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                    {project.name}
-                                </h3>
+                                {editingId === project.id ? (
+                                    <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
+                                        <input
+                                            type="text"
+                                            value={editingName}
+                                            onChange={(e) => setEditingName(e.target.value)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') saveRename(e as any, project.id);
+                                                if (e.key === 'Escape') cancelRename(e as any);
+                                            }}
+                                            className="flex-1 px-3 py-2 text-sm border border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white"
+                                            autoFocus
+                                        />
+                                        <button
+                                            onClick={(e) => saveRename(e, project.id)}
+                                            className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all"
+                                            title="Save"
+                                        >
+                                            <Check className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            onClick={cancelRename}
+                                            className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
+                                            title="Cancel"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                                        {project.name}
+                                    </h3>
+                                )}
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
                                     ID: {project.id}
                                 </p>
