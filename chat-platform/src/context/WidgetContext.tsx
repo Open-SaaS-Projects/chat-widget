@@ -26,6 +26,12 @@ export interface WidgetConfig {
         welcomeMessage: string;
         placeholder: string;
     };
+    persona: {
+        tone: string;
+        agentType: string;
+        responseLength: string;
+        customInstructions: string;
+    };
 }
 
 interface WidgetContextType {
@@ -37,6 +43,7 @@ interface WidgetContextType {
     updateColors: (updates: Partial<WidgetConfig["colors"]>) => void;
     updateBranding: (updates: Partial<WidgetConfig["branding"]>) => void;
     updateText: (updates: Partial<WidgetConfig["text"]>) => void;
+    updatePersona: (updates: Partial<WidgetConfig["persona"]>) => void;
     loadProject: (projectId: string) => void;
     saveProject: () => void;
     renameProject: (name: string) => void;
@@ -64,6 +71,12 @@ const defaultConfig: WidgetConfig = {
         headerTitle: "Chat Widget",
         welcomeMessage: "Hi! What can I help you with?",
         placeholder: "Message...",
+    },
+    persona: {
+        tone: "friendly",
+        agentType: "general",
+        responseLength: "medium",
+        customInstructions: "",
     },
 };
 
@@ -93,6 +106,11 @@ export function WidgetProvider({ children }: { children: React.ReactNode }) {
 
     const updateText = useCallback((updates: Partial<WidgetConfig["text"]>) => {
         setConfig((prev) => ({ ...prev, text: { ...prev.text, ...updates } }));
+        setHasUnsavedChanges(true);
+    }, []);
+
+    const updatePersona = useCallback((updates: Partial<WidgetConfig["persona"]>) => {
+        setConfig((prev) => ({ ...prev, persona: { ...prev.persona, ...updates } }));
         setHasUnsavedChanges(true);
     }, []);
 
@@ -158,6 +176,7 @@ export function WidgetProvider({ children }: { children: React.ReactNode }) {
                 updateColors,
                 updateBranding,
                 updateText,
+                updatePersona,
                 loadProject,
                 saveProject,
                 renameProject,

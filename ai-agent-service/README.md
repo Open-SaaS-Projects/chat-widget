@@ -21,6 +21,7 @@ The AI Agent Service acts as the brain of the chat widget, handling:
 - **Session Management**: Maintains conversation history using Redis
 - **Context Retrieval**: Queries the Knowledge Base for relevant information
 - **Response Generation**: Combines context and history to generate accurate responses
+- **Persona Building**: Dynamically customizes AI personality based on user configuration
 
 ## 🏗️ Architecture
 
@@ -140,6 +141,12 @@ Generate an AI response for a user query.
   "query": "What is your return policy?",
   "project_id": "proj_abc123",
   "session_id": "session_xyz789",
+  "persona": {
+    "agentType": "support",
+    "tone": "professional",
+    "responseLength": "medium",
+    "customInstructions": "Always mention our 24/7 support availability"
+  },
   "history": [
     {"role": "user", "content": "Hello"},
     {"role": "assistant", "content": "Hi! How can I help?"}
@@ -151,6 +158,11 @@ Generate an AI response for a user query.
 - `query` (string, required): User's question
 - `project_id` (string, required): Project identifier for KB filtering
 - `session_id` (string, optional): Session ID for conversation continuity
+- `persona` (object, optional): AI personality configuration
+  - `agentType` (string): Role type (general, support, sales, technical, tutor)
+  - `tone` (string): Communication style (friendly, professional, casual, empathetic, enthusiastic, concise)
+  - `responseLength` (string): Response verbosity (short, medium, detailed)
+  - `customInstructions` (string): Specific behavioral rules
 - `history` (array, optional): Previous conversation messages
 
 **Response:**
@@ -165,9 +177,10 @@ Generate an AI response for a user query.
 **Flow:**
 1. Retrieve conversation history from Redis (if `session_id` provided)
 2. Query Knowledge Base for relevant context
-3. Generate response using LLM with context and history
-4. Save updated conversation history to Redis
-5. Return response
+3. Build dynamic system prompt based on persona configuration
+4. Generate response using LLM with context, persona, and history
+5. Save updated conversation history to Redis
+6. Return response
 
 ### 3. WebSocket Chat
 
@@ -249,7 +262,11 @@ async for chunk in llm_service.generate_stream_response(query, context, history)
 
 **System Prompt:**
 
-The service uses a carefully crafted system prompt that:
+The service uses a dynamic system prompt that:
+- Adapts based on selected agent type (Support, Sales, Technical, etc.)
+- Adjusts tone and communication style (Friendly, Professional, etc.)
+- Controls response length (Short, Medium, Detailed)
+- Incorporates custom instructions for specific behaviors
 - Defines the AI's role as a customer support assistant
 - Instructs natural, multilingual responses
 - Emphasizes context-based answers
@@ -372,10 +389,12 @@ ai-agent-service/
 ├── main.py                 # FastAPI application
 ├── requirements.txt        # Python dependencies
 ├── Dockerfile             # Container definition
+├── README.md              # This file
 └── services/
     ├── llm_service.py     # LLM integration
     ├── kb_service.py      # Knowledge Base client
-    └── session_service.py # Session management
+    ├── session_service.py # Session management
+    └── persona_builder.py # Dynamic persona system prompts
 ```
 
 ### Adding New Features

@@ -44,17 +44,42 @@ def extract_text(file_path: str, file_type: str) -> str:
 
 def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
     """
-    Simple sliding window chunking. 
-    In a real production app, we'd use semantic chunking or a library like LangChain's RecursiveCharacterTextSplitter.
+    Splits text into chunks respecting paragraph and sentence boundaries.
     """
+    if not text:
+        return []
+        
     chunks = []
     start = 0
     text_len = len(text)
-    
+
     while start < text_len:
         end = start + chunk_size
-        chunk = text[start:end]
-        chunks.append(chunk)
-        start += chunk_size - overlap
+        
+        if end >= text_len:
+            chunks.append(text[start:])
+            break
+            
+        # Try to find a paragraph break (double newline)
+        last_break = text.rfind('\n\n', start, end)
+        if last_break != -1 and last_break > start + chunk_size * 0.5:
+            end = last_break + 2
+        else:
+            # Try to find a sentence break (period followed by space)
+            last_period = text.rfind('. ', start, end)
+            if last_period != -1 and last_period > start + chunk_size * 0.5:
+                end = last_period + 2
+            else:
+                # Fallback to space
+                last_space = text.rfind(' ', start, end)
+                if last_space != -1:
+                    end = last_space + 1
+        
+        chunk = text[start:end].strip()
+        if chunk:
+            chunks.append(chunk)
+        
+        # Move start position back by overlap amount, but don't go behind current start
+        start = max(start + 1, end - overlap)
         
     return chunks

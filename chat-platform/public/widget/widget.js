@@ -606,7 +606,9 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             query: message,
-            project_id: projectId
+            project_id: projectId,
+            session_id: this.sessionId,
+            persona: this.config.persona
           })
         });
 

@@ -18,6 +18,7 @@ The Knowledge Base Service is a Python FastAPI microservice responsible for docu
 
 The Knowledge Base Service handles:
 - **Document Upload**: Accepts PDF, DOCX, TXT, and MD files
+- **Website Crawling**: Scrapes and indexes website content using Tavily API
 - **Text Extraction**: Extracts text from various document formats
 - **Text Chunking**: Splits documents into semantic chunks
 - **Embedding Generation**: Creates vector embeddings using Google Gemini
@@ -79,6 +80,7 @@ The Knowledge Base Service handles:
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
 | `GOOGLE_API_KEY` | Google Gemini API key | ✅ Yes | - |
+| `TAVILY_API_KEY` | Tavily API key for website scraping | ✅ Yes | - |
 | `MONGO_URL` | MongoDB connection string | No | `mongodb://mongo:27017` |
 | `QDRANT_URL` | Qdrant connection URL | No | `http://qdrant:6333` |
 
@@ -252,6 +254,50 @@ console.log(results);
 3. Filter by `project_id`
 4. Return top N results with similarity scores
 
+### 4. Crawl Website
+
+**POST** `/crawl`
+
+Crawl and index a website.
+
+**Request:**
+- Content-Type: `application/x-www-form-urlencoded`
+- Fields:
+  - `url`: Website URL to crawl
+  - `project_id`: Project identifier
+
+**Example (cURL):**
+```bash
+curl -X POST http://localhost:8000/crawl \\
+  -d "url=https://example.com" \\
+  -d "project_id=proj_abc123"
+```
+
+**Response:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "completed",
+  "chunks": 12
+}
+```
+
+**Crawling Flow:**
+1. Use Tavily API to discover URLs on the website
+2. Extract content from discovered pages
+3. Clean and preprocess HTML content
+4. Create document record in MongoDB
+5. Split text into chunks
+6. Generate embeddings for each chunk
+7. Store vectors in Qdrant
+8. Update MongoDB document status
+
+**Features:**
+- Automatic URL discovery using Tavily's map API
+- HTML cleaning (removes scripts, styles, navigation)
+- Text preprocessing (whitespace normalization)
+- Fallback to main URL if discovery fails
+
 ## 🔧 Services
 
 ### 1. File Processing (`services/file_processing.py`)
@@ -421,9 +467,11 @@ knowledge-base-service/
 ├── models.py                  # Pydantic data models
 ├── requirements.txt           # Python dependencies
 ├── Dockerfile                 # Container definition
+├── README.md                  # This file
 ├── services/
 │   ├── embeddings.py         # Embedding generation
-│   └── file_processing.py    # Document processing
+│   ├── file_processing.py    # Document processing
+│   └── scraping.py           # Website scraping (Tavily)
 └── uploads/                   # File storage (created at runtime)
     └── {project_id}/
         └── {files}

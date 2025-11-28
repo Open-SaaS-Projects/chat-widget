@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from database import get_mongo_db, get_qdrant_client
 from services.file_processing import save_upload_file, extract_text, chunk_text
+from services.scraping import scrape_website
 from services.embeddings import generate_embedding, generate_query_embedding
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
@@ -160,3 +161,121 @@ async def query_knowledge_base(
         } 
         for hit in search_result
     ]
+
+@app.post("/crawl")
+async def crawl_website(
+    url: str = Form(...),
+    project_id: str = Form(...),
+    mongo_db: Database = Depends(get_mongo_db),
+    qdrant: QdrantClient = Depends(get_qdrant_client)
+):
+    # 1. Create Document record in MongoDB
+    doc_id = str(uuid.uuid4())
+    doc_data = {
+        "_id": doc_id,
+        "project_id": project_id,
+        "filename": url,
+        "file_type": "website",
+        "file_path": url,
+        "upload_date": datetime.utcnow(),
+        "status": "processing"
+    }
+    mongo_db.documents.insert_one(doc_data)
+    
+    try:
+        # 2. Scrape website
+        print(f"🌐 Starting scrape for: {url}")
+        text_content = scrape_website(url)
+        if not text_content:
+            raise Exception("Failed to scrape content")
+        print(f"📝 Scraped content length: {len(text_content)} characters")
+            
+        # 3. Chunk text
+        print(f"✂️  Starting chunking...")
+        chunks = chunk_text(text_content)
+        print(f"📦 Created {len(chunks)} chunks")
+        
+        # 4. Generate embeddings and save chunks to Qdrant
+        points = []
+        for i, chunk_text_content in enumerate(chunks):
+            print(f"🔢 Generating embedding for chunk {i+1}/{len(chunks)}")
+            embedding = generate_embedding(chunk_text_content)
+            if embedding:
+                point_id = str(uuid.uuid4())
+                points.append(qmodels.PointStruct(
+                    id=point_id,
+                    vector=embedding,
+                    payload={
+                        "document_id": doc_id,
+                        "content": chunk_text_content,
+                        "project_id": project_id,
+                        "chunk_index": i,
+                        "source_type": "website",
+                        "url": url
+                    }
+                ))
+            else:
+                print(f"⚠️  Failed to generate embedding for chunk {i+1}")
+        
+        print(f"💾 Upserting {len(points)} points to Qdrant")
+        if points:
+            qdrant.upsert(
+                collection_name=COLLECTION_NAME,
+                points=points
+            )
+        
+        # Update status
+        mongo_db.documents.update_one(
+            {"_id": doc_id},
+            {"$set": {"status": "completed", "chunks_count": len(points)}}
+        )
+        
+        print(f"✅ Crawl completed: {len(points)} chunks stored")
+        return {"id": doc_id, "status": "completed", "chunks": len(points)}
+        
+    except Exception as e:
+        mongo_db.documents.update_one(
+            {"_id": doc_id},
+            {"$set": {"status": "failed", "error": str(e)}}
+        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/documents")
+async def list_documents(
+    project_id: str,
+    mongo_db: Database = Depends(get_mongo_db)
+):
+    cursor = mongo_db.documents.find({"project_id": project_id}).sort("upload_date", -1)
+    documents = []
+    for doc in cursor:
+        doc["id"] = doc.pop("_id")
+        documents.append(doc)
+    return documents
+
+@app.delete("/documents/{doc_id}")
+async def delete_document(
+    doc_id: str,
+    mongo_db: Database = Depends(get_mongo_db),
+    qdrant: QdrantClient = Depends(get_qdrant_client)
+):
+    # 1. Delete from MongoDB
+    result = mongo_db.documents.delete_one({"_id": doc_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found")
+        
+    # 2. Delete vectors from Qdrant
+    qdrant.delete(
+        collection_name=COLLECTION_NAME,
+        points_selector=qmodels.FilterSelector(
+            filter=qmodels.Filter(
+                must=[
+                    qmodels.FieldCondition(
+                        key="document_id",
+                        match=qmodels.MatchValue(value=doc_id)
+                    )
+                ]
+            )
+        )
+    )
+    
+    return {"status": "deleted", "id": doc_id}

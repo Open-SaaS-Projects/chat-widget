@@ -33,6 +33,7 @@ class ChatRequest(BaseModel):
     project_id: str
     session_id: Optional[str] = "default"
     history: List[Dict[str, str]] = []
+    persona: Optional[Dict[str, str]] = {}
 
 @app.get("/")
 async def root():
@@ -47,6 +48,9 @@ async def health_check():
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
+    print(f"📨 Chat Request: query='{request.query}' project_id='{request.project_id}'")
+    print(f"🎭 Persona Config: {json.dumps(request.persona, indent=2)}")
+    
     # 1. Get conversation history from Redis
     stored_history = session_service.get_conversation_history(request.project_id, request.session_id)
     
@@ -56,8 +60,8 @@ async def chat(request: ChatRequest):
     # 2. Retrieve context from Knowledge Base
     context = await kb_service.get_relevant_context(request.query, request.project_id)
     
-    # 3. Generate response using LLM with conversation history
-    response = await llm_service.generate_response(request.query, context, conversation_history)
+    # 3. Generate response using LLM with conversation history and persona
+    response = await llm_service.generate_response(request.query, context, conversation_history, request.persona)
     
     # 4. Update conversation history in Redis
     session_service.add_message_to_history(request.project_id, request.session_id, "user", request.query)

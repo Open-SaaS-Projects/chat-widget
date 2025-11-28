@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { query, project_id, history } = body;
+        const { query, project_id, session_id, history, persona } = body;
 
         if (!query || !project_id) {
             return NextResponse.json(
@@ -24,7 +24,9 @@ export async function POST(request: Request) {
             body: JSON.stringify({
                 query,
                 project_id,
-                history: history || []
+                session_id,
+                history: history || [],
+                persona: persona || {}
             }),
         });
 
