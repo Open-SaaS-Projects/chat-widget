@@ -1,184 +1,356 @@
-# BuildShip AI Chat Widget
+# MAKKN Chat Widget Platform
 
-An open-source AI chat widget that can be easily embedded on your website or app. This plug-and-play widget is designed to work seamlessly with your custom [BuildShip](https://buildship.com/) workflow, allowing it to connect with your database, knowledge repository, and any other tools that you use.
+A production-ready, AI-powered customer support chat widget platform with knowledge base integration, built using a microservices architecture.
 
-With this powerful AI chat assistant, you can enhance the user experience of your website or app significantly.
+## 🏗️ Architecture Overview
 
-## [TRY LIVE DEMO](https://buildship.com/chat-widget/city-advisor)
+This project consists of three main microservices:
 
-<!--![AI Chatbot Widget OpenSource - collapsed](https://github.com/rowyio/buildship-chat-widget/assets/307298/c14e4861-b2f7-4a0b-bc68-fae6ef7d9381)
--->
-https://github.com/rowyio/buildship-chat-widget/assets/307298/ba94c03d-e140-41b9-9da5-7bb27689271e
-
-## Getting started
-
-### Step 1. Add the widget to your website or app
-
-- First, load the chat widget on your page by adding the following code snippet. Then connect the widget to your BuildShip workflow by replacing the sample API URL with your BuildShip deployed API url as per the instructions [in Step 2](#step-2-connecting-the-chat-widget-to-your-buildship-workflow). Add any [customization](#step-3-config-properties-and-customization) options as needed.
-
-  ```html
-  <script src="https://unpkg.com/@buildshipapp/chat-widget@^1" defer></script>
-  <script>
-    window.addEventListener("load", () => {
-      window.buildShipChatWidget.config.widgetTitle = "Chatbot";
-      window.buildShipChatWidget.config.greetingMessage =
-        "Hello! How may I help you today?";
-      window.buildShipChatWidget.config.url =
-        "https://<project_id>.buildship.run/chat/....";
-      <!-- Other optional properties, learn more in the `Config Properties` section below -->
-    });
-  </script>
-  ```
-
-  You may also import it as a module if you're working with TypeScript or ES6 (type declarations are included):
-
-  ```typescript
-  import "@buildshipapp/chat-widget";
-
-  window.buildShipChatWidget.config.widgetTitle = "Chatbot";
-  window.buildShipChatWidget.config.greetingMessage =
-    "Hello! How may I help you today?";
-  window.buildShipChatWidget.config.url =
-    "https://<project_id>.buildship.run/chat/....";
-  // ...
-  ```
-
-- Secondly, place a button with the following data-attribute anywhere on your website or app to open the widget:
-
-  ```html
-  <button data-buildship-chat-widget-button>Beep Boop</button>
-  ```
-
-<!-- Checkout this complete HTML code snippet sample if you want to test this out in your app first. This snippet has custom CSS styling for the button as well as a deployed test BuildShip API plugged in it. Simply copy paste from here into your website or app with HTML embed element say on Framer or Website and publish to give it a try. -->
-
-### Step 2. Connecting the chat widget to your BuildShip workflow
-
-The widget is built to work with [BuildShip](https://buildship.com/) - a lowcode backend builder for creating APIs, scheduled jobs visually and fast with a drag-and-drop interface.
-
-- Get started by cloning any of these [chat widget templates](https://buildship.com/assistant-api#templates) closest to your usecase
-- Add in your OpenAI Assistant ID and API Key and then ship the workflow. You will get an API URL once you deploy your workflow.
-- Plug in this workflow endpoint URL into the widget by setting the `window.buildShipChatWidget.config.url` property. See [Step 3](#step-3-config-properties-and-customization) for more details.
-- You can also customize this template workflow any way you would like.
-
-#### Requirements for your BuildShip workflow
-
-1. The widget will make a POST request to this URL. The request body will be an object containing the user's message and other data for the workflow to make use of, like so:
-
-   ```json
-   {
-     "message": "The user's message",
-     "threadId": "A unique identifier for the conversation (learn more below)",
-     "timestamp": "The timestamp of when the POST request was initiated"
-
-     ...Other miscellaneous user data (learn more in the 'Config Properties' section below)
-   }
-   ```
-
-   You can learn more about each of the properties [in the next section](#step-3-config-properties-and-customization).
-
-2. The widget will expect a response from the endpoint in the form of a JSON object containing the workflow's response (`message`) and the thread ID (`threadId`), like so:
-
-   ```json
-   {
-     "message": "The bot's response",
-     "threadId": "The unique identifier for the conversation (learn more below)"
-   }
-   ```
-
-#### Streamed responses
-
-In case of a streamed response, the widget won't expect a JSON object as described above, but will instead expect a stream of chunks that eventually add up to the response message. The widget will aggregate these chunks as they're received and display and update the message in real time, finally ending with the full response.
-
-##### Setting the `threadId` through the response
-
-Optionally, there are two ways to set the `threadId` through the response.
-
-1. Via a response header
-
-   If the response includes a header with the key `x-thread-id` with the thread ID as the value, the widget will automatically pick it up and set it as the `threadId` for the conversation (if it's not already set).
-
-   NOTE: Make sure to set the `Access-Control-Expose-Headers` header in your response to expose the `x-thread-id` header to the client widget.
-
-2. Via the stream itself
-
-   If the endpoint responds with the `message` and the `threadId` in the following format: `message` + `\x1f` + `threadId`, where `\x1f` is the unit separator character, the widget will then extract the thread ID from the stream and set it as the `threadId` for the conversation (if it's not already set). For example:
-
-   ```typescript
-   // Simulating what a streamed response might look like where
-   // message: "Hello world!"
-   // threadId: "tId_123"
-   readable.push("Hello ");
-   readable.push("world!");
-   readable.push("\x1f" + "tId_123"); // No spaces between the end of the message, the unit separator character, and the beginning of the threadId
-   ```
-
-### Step 3. Config Properties and Customization
-
-The widget can be customized by editing the properties present in the `window.buildShipChatWidget.config` object.
-
-| Property                                              | Type     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ----------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| window.buildShipChatWidget.config.url                 | Required | The URL of the endpoint to which the widget will make a POST request when the user sends a message. The endpoint should expect a JSON object in the request body and should respond with a JSON object containing the bot's response and the thread ID.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| window.buildShipChatWidget.config.threadId            | Optional | A unique identifier for the conversation. This can be used to maintain the context of the conversation across multiple messages/sessions. If not set, the widget will send the first user message without a thread ID. If you then design your workflow to have it return a thread ID as part of its response (as described in [Request and Response](#requirements-for-your-buildship-workflow)), the widget will automatically use that for the rest of the conversation until the script remains loaded -- for example, the thread ID will be discarded if the page is refreshed. Note: The thread ID returned in the response will not be used if the `threadId` property is already set. |
-| window.buildShipChatWidget.config.user                | Optional | An object containing the user's data. This can be used to send the user's name, email, or any other data that the workflow might need. Example: `window.buildShipChatWidget.config.user = { name: "Some User", email: "user@email.com", // ...Other user data};`                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| window.buildShipChatWidget.config.widgetTitle         | Optional | The title of the widget. This will be displayed at the top of the widget. Defaults to `Chatbot`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| window.buildShipChatWidget.config.greetingMessage     | Optional | The message that will be displayed (as though it were sent by the system) when the widget is first opened. Defaults to not displaying any greeting message.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| window.buildShipChatWidget.config.disableErrorAlert   | Optional | Disables error alerts if no URL is set, if the request fails, etc. Defaults to `false`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| window.buildShipChatWidget.config.closeOnOutsideClick | Optional | Closes the widget when the user clicks outside of the widget body. If set to `false`, you will need to use the `close()` method (provided in the `window.buildShipChatWidget` object) to be able to close the widget programmatically (for example, by attaching it to a button). Defaults to `true`.                                                                                                                                                                                                                                                                                                                                                                                         |
-| window.buildShipChatWidget.config.openOnLoad          | Optional | Automatically opens the widget when the page finishes loading (requires a button with the `data-buildship-chat-widget-button` attribute to be present on the page). Defaults to `false`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| window.buildShipChatWidget.config.responseIsAStream   | Optional | If set to `true`, the widget will expect the response to be streamed back from the endpoint. The endpoint must respond with a series of chunks that finally add up to the endpoint's response. The widget will aggregate these chunks as they're received and display and update the message, finally ending with the full response. Learn more [here](#streamed-responses). Defaults to `false`.                                                                                                                                                                                                                                                                                             |
-
-#### Customizing the widget's appearance (optional)
-
-The widget’s styling can be customized by overriding the CSS variables and/or the rules. (See [here](https://github.com/rowyio/buildship-chat-widget/blob/main/src/widget.css) for a list of variables and selectors).
-
-For example, the variables can be overridden like so:
-
-```css
-:root {
-  --buildship-chat-widget-primary-color: #0000ff;
-}
-
-/* Explicitly targeting the light theme is necessary in case the user's system theme is set to 'dark', but the body's `data-theme` attribute is set to `light` (perhaps via a theme toggle on the page). */
-[data-theme*="light"] {
-  ...;
-}
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Chat Platform                          │
+│                  (Next.js Frontend)                         │
+│                     Port: 3000                              │
+└────────────┬────────────────────────────────────────────────┘
+             │
+             ├──────────────┬──────────────────────────────────┐
+             │              │                                  │
+┌────────────▼─────┐  ┌────▼──────────────┐  ┌───────────────▼─────┐
+│   AI Agent       │  │ Knowledge Base    │  │   Redis             │
+│   Service        │  │ Service           │  │   (Sessions)        │
+│   Port: 8001     │  │ Port: 8000        │  │   Port: 6379        │
+└──────────────────┘  └───────┬───────────┘  └─────────────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    │                   │
+            ┌───────▼──────┐    ┌──────▼──────┐
+            │   MongoDB    │    │   Qdrant    │
+            │ (Metadata)   │    │  (Vectors)  │
+            │ Port: 27017  │    │ Port: 6333  │
+            └──────────────┘    └─────────────┘
 ```
 
-Dark mode is activated when either:
+## 📋 Table of Contents
 
-- the user's system theme is set to `dark` (i.e. `@media (prefers-color-scheme: dark)` is true) and that's what the page uses, or
+- [Features](#features)
+- [Technology Stack](#technology-stack)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Environment Variables](#environment-variables)
+- [Service Documentation](#service-documentation)
+- [API Endpoints](#api-endpoints)
+- [Development](#development)
+- [Deployment](#deployment)
+- [Troubleshooting](#troubleshooting)
 
-- the body has a `data-theme` attribute set to `dark`, like so:
+## ✨ Features
 
-  ```html
-  <body data-theme="dark"></body>
-  ```
+### Core Features
+- **AI-Powered Chat**: Intelligent responses using Google Gemini 2.5 Flash
+- **Knowledge Base**: Upload and query documents (PDF, DOCX, TXT, MD)
+- **Conversation Memory**: 24-hour session persistence with Redis
+- **Multilingual Support**: Automatic language detection and matching
+- **Embeddable Widget**: Standalone JavaScript widget for any website
+- **Real-time Preview**: Live widget customization interface
+- **Vector Search**: Semantic search using Qdrant vector database
 
-Dark mode styles can be overridden as well:
+### Advanced Features
+- **Project Management**: Multi-tenant support with project isolation
+- **Custom Branding**: Configurable colors, icons, and styling
+- **Session Management**: Persistent conversations across page reloads
+- **Document Processing**: Automatic text extraction and chunking
+- **Semantic Search**: Context-aware responses using embeddings
 
-```css
-@media (prefers-color-scheme: dark) {
-  :root {
-    ...;
-  }
-}
+## 🛠️ Technology Stack
 
-[data-theme*="dark"] {
-  ...;
-}
+### Frontend
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: Custom React components
+- **State Management**: React Context API
+
+### Backend Services
+- **AI Agent**: Python FastAPI
+- **Knowledge Base**: Python FastAPI
+- **LLM**: Google Gemini 2.5 Flash (via LiteLLM)
+- **Embeddings**: Google Gemini Embedding Model
+
+### Databases
+- **MongoDB**: Document metadata storage
+- **Qdrant**: Vector database for semantic search
+- **Redis**: Session and conversation history storage
+
+### Infrastructure
+- **Containerization**: Docker & Docker Compose
+- **Reverse Proxy**: Built-in Next.js API routes
+
+## 📦 Prerequisites
+
+- **Docker**: Version 20.10 or higher
+- **Docker Compose**: Version 2.0 or higher
+- **Google API Key**: From [Google AI Studio](https://aistudio.google.com/app/apikey)
+- **Git**: For version control
+
+## 🚀 Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd chat-widget
 ```
 
-The font is inherited from the body.
+### 2. Set Up Environment Variables
 
-## How it works
+Create a `.env` file in the root directory:
 
-When the script is loaded, it looks for any elements with the `data-buildship-chat-widget-button` attribute and opens the widget when any of those elements are clicked.
+```bash
+# Google API Key (REQUIRED)
+GOOGLE_API_KEY=your_google_api_key_here
+```
 
-In addition to the `config` object, the `window.buildShipChatWidget` object also exposes the `open()`, `close()` and `init()` methods, which can be called directly.
+**Important**: Never commit your `.env` file to Git. It's already in `.gitignore`.
 
-The `open()` method accepts the click `event`, and uses `event.target` to compute the widget's position using [Floating UI](https://floating-ui.com/).
+### 3. Start All Services
 
-The `close()` method closes the widget.
+```bash
+# Build and start all containers
+docker-compose up -d
 
-The `init()` method initializes the widget, and is called automatically when the window finishes loading. It can be called manually to re-initialize the widget if needed (particularly useful in case of SPAs, where the widget might need to be re-initialized after a route change).
+# View logs
+docker-compose logs -f
+
+# Check status
+docker-compose ps
+```
+
+### 4. Access the Application
+
+- **Frontend**: http://localhost:3000
+- **AI Agent API**: http://localhost:8001
+- **Knowledge Base API**: http://localhost:8000
+- **Qdrant Dashboard**: http://localhost:6333/dashboard
+
+### 5. Test the Widget
+
+Open the test page: http://localhost:3000/widget/test.html
+
+## 🔐 Environment Variables
+
+### Required Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `GOOGLE_API_KEY` | Google Gemini API key | - | ✅ Yes |
+
+### Optional Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `LITELLM_MODEL` | LLM model to use | `gemini/gemini-2.5-flash` |
+| `MONGO_URL` | MongoDB connection string | `mongodb://mongo:27017` |
+| `QDRANT_URL` | Qdrant connection URL | `http://qdrant:6333` |
+| `REDIS_URL` | Redis connection string | `redis://redis:6379/0` |
+
+## 📚 Service Documentation
+
+Detailed technical documentation for each service:
+
+- **[Chat Platform](./chat-platform/README.md)** - Next.js frontend application
+- **[AI Agent Service](./ai-agent-service/README.md)** - LLM integration and response generation
+- **[Knowledge Base Service](./knowledge-base-service/README.md)** - Document processing and vector search
+
+## 🔌 API Endpoints
+
+### Chat Platform (Port 3000)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Landing page |
+| `/dashboard` | GET | Project dashboard |
+| `/project/[id]` | GET | Widget editor |
+| `/api/chat` | POST | Chat proxy endpoint |
+| `/api/config/[id]` | GET | Widget configuration |
+
+### AI Agent Service (Port 8001)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Health check |
+| `/chat` | POST | Generate AI response |
+| `/ws/chat/{project_id}` | WebSocket | Streaming chat |
+
+### Knowledge Base Service (Port 8000)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Health check |
+| `/upload` | POST | Upload document |
+| `/query` | POST | Search knowledge base |
+
+## 💻 Development
+
+### Project Structure
+
+```
+chat-widget/
+├── chat-platform/           # Next.js frontend
+│   ├── src/
+│   │   ├── app/            # App router pages
+│   │   ├── components/     # React components
+│   │   └── context/        # State management
+│   └── public/
+│       └── widget/         # Embeddable widget
+│
+├── ai-agent-service/       # AI Agent microservice
+│   ├── main.py            # FastAPI application
+│   └── services/
+│       ├── llm_service.py # LLM integration
+│       ├── kb_service.py  # Knowledge base client
+│       └── session_service.py # Session management
+│
+├── knowledge-base-service/ # Knowledge Base microservice
+│   ├── main.py            # FastAPI application
+│   ├── database.py        # DB connections
+│   ├── models.py          # Data models
+│   └── services/
+│       ├── embeddings.py  # Embedding generation
+│       └── file_processing.py # Document processing
+│
+└── docker-compose.yml      # Container orchestration
+```
+
+### Running in Development Mode
+
+```bash
+# Start with live reload
+docker-compose up
+
+# Rebuild specific service
+docker-compose build <service-name>
+
+# View logs for specific service
+docker-compose logs -f <service-name>
+
+# Restart specific service
+docker-compose restart <service-name>
+```
+
+### Adding New Features
+
+1. **Frontend Changes**: Edit files in `chat-platform/src/`
+2. **AI Agent Changes**: Edit files in `ai-agent-service/`
+3. **Knowledge Base Changes**: Edit files in `knowledge-base-service/`
+4. **Rebuild**: `docker-compose build <service>`
+5. **Restart**: `docker-compose restart <service>`
+
+## 🚢 Deployment
+
+### Production Checklist
+
+- [ ] Set strong MongoDB credentials
+- [ ] Configure CORS for production domains
+- [ ] Set up SSL/TLS certificates
+- [ ] Configure environment-specific variables
+- [ ] Set up monitoring and logging
+- [ ] Configure backup strategy for databases
+- [ ] Review and update security settings
+
+### Docker Compose Production
+
+```bash
+# Build for production
+docker-compose -f docker-compose.prod.yml build
+
+# Start services
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### 1. API Key Error: "Your API key was reported as leaked"
+
+**Solution**: Generate a new API key and update `.env`:
+```bash
+# 1. Get new key from https://aistudio.google.com/app/apikey
+# 2. Update .env file
+# 3. Restart services
+docker-compose down
+docker-compose up -d
+```
+
+#### 2. MongoDB Connection Error
+
+**Solution**: Ensure MongoDB container is running:
+```bash
+docker-compose ps mongo
+docker-compose logs mongo
+```
+
+#### 3. Qdrant Collection Already Exists
+
+**Solution**: The system now handles this automatically. If issues persist:
+```bash
+docker-compose restart knowledge-base
+```
+
+#### 4. Widget Not Loading
+
+**Solution**: Check CORS and API URLs:
+```bash
+# Verify frontend is running
+curl http://localhost:3000
+
+# Check widget file
+curl http://localhost:3000/widget/widget.js
+```
+
+### Viewing Logs
+
+```bash
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f ai-agent
+docker-compose logs -f knowledge-base
+docker-compose logs -f frontend
+
+# Last N lines
+docker-compose logs --tail=50 ai-agent
+```
+
+### Resetting the System
+
+```bash
+# Stop all containers
+docker-compose down
+
+# Remove volumes (WARNING: deletes all data)
+docker-compose down -v
+
+# Rebuild and start fresh
+docker-compose build
+docker-compose up -d
+```
+
+## 📄 License
+
+[Add your license here]
+
+## 🤝 Contributing
+
+[Add contribution guidelines here]
+
+## 📞 Support
+
+For issues and questions:
+- Create an issue in the repository
+- Contact: [your-email@example.com]
+
+---
+
+**Built with ❤️ by MAKKN**
