@@ -204,8 +204,8 @@ export default function PreviewArea({ device }: PreviewAreaProps) {
                                         <div className="flex flex-col max-w-[80%]">
                                             <div
                                                 className={`p-3 rounded-2xl text-sm ${msg.role === 'user'
-                                                        ? 'rounded-br-none'
-                                                        : 'bg-gray-100 dark:bg-gray-800 rounded-bl-none'
+                                                    ? 'rounded-br-none'
+                                                    : 'bg-gray-100 dark:bg-gray-800 rounded-bl-none'
                                                     }`}
                                                 style={msg.role === 'user' ? { backgroundColor: config.colors.primary, color: '#fff' } : {}}
                                             >
@@ -265,7 +265,7 @@ export default function PreviewArea({ device }: PreviewAreaProps) {
                                     </button>
                                 </div>
                                 <div className="mt-2 text-center">
-                                    <p className="text-[10px] text-gray-400">Powered by MAKKN</p>
+                                    <p className="text-[10px] text-gray-400">Powered by <a href="https://www.makkn.com/" target="_blank">MAKKN</a></p>
                                 </div>
                             </div>
                         </div>

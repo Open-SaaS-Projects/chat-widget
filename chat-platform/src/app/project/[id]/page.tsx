@@ -98,7 +98,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
             {/* Main Content */}
             <div className="flex-1 flex overflow-hidden">
                 {/* Sidebar - Configuration */}
-                <div className="w-[500px] bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+                <div className="w-[600px] bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
                     <ConfigurationPanel />
                 </div>
 

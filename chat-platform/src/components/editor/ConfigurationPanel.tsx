@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Paintbrush, Image as ImageIcon, Type, Settings, Code, Globe, Brain, MessageSquare } from "lucide-react";
+import { Paintbrush, Image as ImageIcon, Type, Settings, Code, Globe, Brain, MessageSquare, Rocket } from "lucide-react";
 import StylePanel from "./panels/StylePanel";
 import BrandingPanel from "./panels/BrandingPanel";
 import ContentPanel from "./panels/ContentPanel";
@@ -10,8 +10,8 @@ import EmbedPanel from "./panels/EmbedPanel";
 import WebsitePanel from "./panels/WebsitePanel";
 import BrainPanel from "./panels/BrainPanel";
 
-type Mode = "widget" | "brain";
-type WidgetTab = "style" | "branding" | "content" | "settings" | "website" | "embed";
+type Mode = "widget" | "brain" | "deployment";
+type WidgetTab = "style" | "content" | "website";
 
 export default function ConfigurationPanel() {
     const [activeMode, setActiveMode] = useState<Mode>("widget");
@@ -19,43 +19,51 @@ export default function ConfigurationPanel() {
 
     const widgetTabs = [
         { id: "style", label: "Style", icon: Paintbrush },
-        { id: "branding", label: "Branding", icon: ImageIcon },
         { id: "content", label: "Content", icon: Type },
-        { id: "settings", label: "Settings", icon: Settings },
         { id: "website", label: "Website", icon: Globe },
-        { id: "embed", label: "Embed", icon: Code },
     ] as const;
 
     return (
         <div className="flex h-full bg-white dark:bg-gray-800">
             {/* Left Rail - Main Mode Switcher */}
-            <div className="w-16 flex-shrink-0 flex flex-col items-center py-6 gap-6 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+            <div className="w-64 flex-shrink-0 flex flex-col py-6 px-3 gap-2 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                <div className="px-3 mb-4">
+                    <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Menu
+                    </h2>
+                </div>
+
                 <button
                     onClick={() => setActiveMode("widget")}
-                    className={`p-3 rounded-xl transition-all group relative ${activeMode === "widget"
-                        ? "bg-white dark:bg-gray-800 text-primary shadow-md"
-                        : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-800/50"
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all w-full text-left ${activeMode === "widget"
+                        ? "bg-white dark:bg-gray-800 text-primary shadow-sm ring-1 ring-gray-200 dark:ring-gray-700"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
                         }`}
-                    title="Widget Customization"
                 >
-                    <MessageSquare className="h-6 w-6" />
-                    {activeMode === "widget" && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full -ml-4" />
-                    )}
+                    <MessageSquare className="h-4 w-4" />
+                    <span className="text-sm font-medium">Widget Editor</span>
                 </button>
 
                 <button
                     onClick={() => setActiveMode("brain")}
-                    className={`p-3 rounded-xl transition-all group relative ${activeMode === "brain"
-                        ? "bg-white dark:bg-gray-800 text-primary shadow-md"
-                        : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-800/50"
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all w-full text-left ${activeMode === "brain"
+                        ? "bg-white dark:bg-gray-800 text-primary shadow-sm ring-1 ring-gray-200 dark:ring-gray-700"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
                         }`}
-                    title="Brain & Intelligence"
                 >
-                    <Brain className="h-6 w-6" />
-                    {activeMode === "brain" && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full -ml-4" />
-                    )}
+                    <Brain className="h-4 w-4" />
+                    <span className="text-sm font-medium">Knowledge Base</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveMode("deployment")}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all w-full text-left ${activeMode === "deployment"
+                        ? "bg-white dark:bg-gray-800 text-primary shadow-sm ring-1 ring-gray-200 dark:ring-gray-700"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                        }`}
+                >
+                    <Rocket className="h-4 w-4" />
+                    <span className="text-sm font-medium">Deployment</span>
                 </button>
             </div>
 
@@ -85,17 +93,50 @@ export default function ConfigurationPanel() {
 
                         {/* Widget Panels */}
                         <div className="flex-1 overflow-y-auto">
-                            {activeWidgetTab === "style" && <StylePanel />}
-                            {activeWidgetTab === "branding" && <BrandingPanel />}
+                            {activeWidgetTab === "style" && (
+                                <div className="space-y-8 p-4">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+                                            <Paintbrush className="h-4 w-4 text-primary" />
+                                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                                                Appearance
+                                            </h3>
+                                        </div>
+                                        <StylePanel />
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+                                            <ImageIcon className="h-4 w-4 text-primary" />
+                                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                                                Branding
+                                            </h3>
+                                        </div>
+                                        <BrandingPanel />
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+                                            <Settings className="h-4 w-4 text-primary" />
+                                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                                                Settings
+                                            </h3>
+                                        </div>
+                                        <SettingsPanel />
+                                    </div>
+                                </div>
+                            )}
                             {activeWidgetTab === "content" && <ContentPanel />}
-                            {activeWidgetTab === "settings" && <SettingsPanel />}
                             {activeWidgetTab === "website" && <WebsitePanel />}
-                            {activeWidgetTab === "embed" && <EmbedPanel />}
                         </div>
                     </>
-                ) : (
+                ) : activeMode === "brain" ? (
                     <div className="flex-1 overflow-y-auto">
                         <BrainPanel />
+                    </div>
+                ) : (
+                    <div className="flex-1 overflow-y-auto">
+                        <EmbedPanel />
                     </div>
                 )}
             </div>

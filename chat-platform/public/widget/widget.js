@@ -491,7 +491,9 @@
                 </svg>
               </button>
             </div>
-            <div class="branding">Powered by MAKKN</div>
+            <div class="branding">
+  Powered by <a href="https://www.makkn.com/" target="_blank">MAKKN</a>
+</div>
           </div>
         </div>
       `;
