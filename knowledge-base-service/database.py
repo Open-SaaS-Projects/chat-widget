@@ -1,18 +1,18 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 import os
+from pymongo import MongoClient
+from qdrant_client import QdrantClient
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/makkn_db")
+# MongoDB Connection
+MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+mongo_client = MongoClient(MONGO_URL)
+mongo_db = mongo_client["makkn_db"]
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Qdrant Connection
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+qdrant_client = QdrantClient(url=QDRANT_URL)
 
-Base = declarative_base()
+def get_mongo_db():
+    return mongo_db
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+def get_qdrant_client():
+    return qdrant_client

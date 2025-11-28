@@ -1,14 +1,13 @@
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from database import engine, get_db, Base
-from models import Document, Chunk
+from database import get_mongo_db, get_qdrant_client
 from services.file_processing import save_upload_file, extract_text, chunk_text
 from services.embeddings import generate_embedding, generate_query_embedding
-from sqlalchemy import text
-
-# Create tables
-Base.metadata.create_all(bind=engine)
+from qdrant_client import QdrantClient
+from qdrant_client.http import models as qmodels
+from pymongo.database import Database
+from datetime import datetime
+import uuid
 
 app = FastAPI(
     title="Knowledge Base Service",
@@ -25,9 +24,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Constants
+COLLECTION_NAME = "makkn_knowledge_base"
+VECTOR_SIZE = 768 # Gemini 1.5 embedding dimension
+
+@app.on_event("startup")
+async def startup_event():
+    client = get_qdrant_client()
+    try:
+        # Check if collection exists
+        collections = client.get_collections().collections
+        collection_exists = any(col.name == COLLECTION_NAME for col in collections)
+        
+        if not collection_exists:
+            client.create_collection(
+                collection_name=COLLECTION_NAME,
+                vectors_config=qmodels.VectorParams(size=VECTOR_SIZE, distance=qmodels.Distance.COSINE)
+            )
+            print(f"Created Qdrant collection: {COLLECTION_NAME}")
+        else:
+            print(f"Qdrant collection already exists: {COLLECTION_NAME}")
+    except Exception as e:
+        print(f"Error during startup: {e}")
+
 @app.get("/")
 async def root():
-    return {"message": "Knowledge Base Service is running"}
+    return {"message": "Knowledge Base Service is running (Mongo + Qdrant)"}
 
 @app.get("/health")
 async def health_check():
@@ -37,22 +59,24 @@ async def health_check():
 async def upload_file(
     file: UploadFile = File(...),
     project_id: str = Form(...),
-    db: Session = Depends(get_db)
+    mongo_db: Database = Depends(get_mongo_db),
+    qdrant: QdrantClient = Depends(get_qdrant_client)
 ):
     # 1. Save file
     file_path = await save_upload_file(file, project_id)
     
-    # 2. Create Document record
-    db_doc = Document(
-        project_id=project_id,
-        filename=file.filename,
-        file_type=file.content_type,
-        file_path=file_path,
-        status="processing"
-    )
-    db.add(db_doc)
-    db.commit()
-    db.refresh(db_doc)
+    # 2. Create Document record in MongoDB
+    doc_id = str(uuid.uuid4())
+    doc_data = {
+        "_id": doc_id,
+        "project_id": project_id,
+        "filename": file.filename,
+        "file_type": file.content_type,
+        "file_path": file_path,
+        "upload_date": datetime.utcnow(),
+        "status": "processing"
+    }
+    mongo_db.documents.insert_one(doc_data)
     
     try:
         # 3. Extract text
@@ -63,26 +87,42 @@ async def upload_file(
         # 4. Chunk text
         chunks = chunk_text(text_content)
         
-        # 5. Generate embeddings and save chunks
+        # 5. Generate embeddings and save chunks to Qdrant
+        points = []
         for i, chunk_text_content in enumerate(chunks):
             embedding = generate_embedding(chunk_text_content)
             if embedding:
-                db_chunk = Chunk(
-                    document_id=db_doc.id,
-                    content=chunk_text_content,
-                    embedding=embedding,
-                    chunk_index=i
-                )
-                db.add(db_chunk)
+                point_id = str(uuid.uuid4())
+                points.append(qmodels.PointStruct(
+                    id=point_id,
+                    vector=embedding,
+                    payload={
+                        "document_id": doc_id,
+                        "content": chunk_text_content,
+                        "project_id": project_id,
+                        "chunk_index": i
+                    }
+                ))
         
-        db_doc.status = "completed"
-        db.commit()
+        if points:
+            qdrant.upsert(
+                collection_name=COLLECTION_NAME,
+                points=points
+            )
         
-        return {"id": db_doc.id, "status": "completed", "chunks": len(chunks)}
+        # Update status
+        mongo_db.documents.update_one(
+            {"_id": doc_id},
+            {"$set": {"status": "completed", "chunks_count": len(points)}}
+        )
+        
+        return {"id": doc_id, "status": "completed", "chunks": len(points)}
         
     except Exception as e:
-        db_doc.status = "failed"
-        db.commit()
+        mongo_db.documents.update_one(
+            {"_id": doc_id},
+            {"$set": {"status": "failed", "error": str(e)}}
+        )
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/query")
@@ -90,34 +130,33 @@ async def query_knowledge_base(
     query: str = Form(...),
     project_id: str = Form(...),
     limit: int = 5,
-    db: Session = Depends(get_db)
+    qdrant: QdrantClient = Depends(get_qdrant_client)
 ):
     # 1. Generate query embedding
     query_embedding = generate_query_embedding(query)
     if not query_embedding:
         raise HTTPException(status_code=500, detail="Failed to generate embedding")
         
-    # 2. Perform vector search using pgvector
-    # Note: We need to cast the embedding to a string representation for the SQL query
-    embedding_str = str(query_embedding)
-    
-    # SQL query to find nearest neighbors within the project
-    sql = text("""
-        SELECT c.content, c.document_id, 1 - (c.embedding <=> :embedding) as similarity
-        FROM chunks c
-        JOIN documents d ON c.document_id = d.id
-        WHERE d.project_id = :project_id
-        ORDER BY c.embedding <=> :embedding
-        LIMIT :limit
-    """)
-    
-    results = db.execute(sql, {
-        "embedding": embedding_str, 
-        "project_id": project_id, 
-        "limit": limit
-    }).fetchall()
+    # 2. Perform vector search using Qdrant
+    search_result = qdrant.search(
+        collection_name=COLLECTION_NAME,
+        query_vector=query_embedding,
+        query_filter=qmodels.Filter(
+            must=[
+                qmodels.FieldCondition(
+                    key="project_id",
+                    match=qmodels.MatchValue(value=project_id)
+                )
+            ]
+        ),
+        limit=limit
+    )
     
     return [
-        {"content": row[0], "document_id": row[1], "similarity": row[2]} 
-        for row in results
+        {
+            "content": hit.payload["content"],
+            "document_id": hit.payload["document_id"],
+            "similarity": hit.score
+        } 
+        for hit in search_result
     ]
