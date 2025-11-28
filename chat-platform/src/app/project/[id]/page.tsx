@@ -10,8 +10,10 @@ import Logo from "@/components/ui/Logo";
 
 export default function EditorPage({ params }: { params: Promise<{ id: string }> }) {
     const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
-    const { loadProject, saveProject, hasUnsavedChanges, projectName } = useWidget();
+    const { loadProject, saveProject, renameProject, hasUnsavedChanges, projectName } = useWidget();
     const [showSaved, setShowSaved] = useState(false);
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [tempName, setTempName] = useState("");
 
     // Unwrap params Promise for Next.js 15
     const { id } = use(params);
@@ -25,6 +27,31 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
         saveProject();
         setShowSaved(true);
         setTimeout(() => setShowSaved(false), 2000);
+    };
+
+    const handleRenameStart = () => {
+        setTempName(projectName);
+        setIsRenaming(true);
+    };
+
+    const handleRenameSave = () => {
+        if (tempName.trim()) {
+            renameProject(tempName.trim());
+        }
+        setIsRenaming(false);
+    };
+
+    const handleRenameCancel = () => {
+        setIsRenaming(false);
+        setTempName("");
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") {
+            handleRenameSave();
+        } else if (e.key === "Escape") {
+            handleRenameCancel();
+        }
     };
 
     return (
@@ -41,9 +68,25 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
                         <ArrowLeft className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     </Link>
                     <div>
-                        <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {projectName}
-                        </h1>
+                        {isRenaming ? (
+                            <input
+                                type="text"
+                                value={tempName}
+                                onChange={(e) => setTempName(e.target.value)}
+                                onBlur={handleRenameSave}
+                                onKeyDown={handleKeyDown}
+                                autoFocus
+                                className="text-lg font-semibold text-gray-900 dark:text-white bg-transparent border-b-2 border-primary focus:outline-none px-1"
+                            />
+                        ) : (
+                            <h1
+                                className="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded transition-colors"
+                                onDoubleClick={handleRenameStart}
+                                title="Double click to rename"
+                            >
+                                {projectName}
+                            </h1>
+                        )}
                         {hasUnsavedChanges && (
                             <p className="text-xs text-gray-500">Unsaved changes</p>
                         )}

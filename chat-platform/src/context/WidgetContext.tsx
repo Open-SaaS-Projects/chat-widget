@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { getProject, saveProject as saveProjectStorage, Project } from "@/lib/storage";
+import { getProject, saveProject as saveProjectStorage, renameProject as renameProjectStorage, Project } from "@/lib/storage";
 
 export interface WidgetConfig {
     position: "left" | "right";
@@ -39,6 +39,7 @@ interface WidgetContextType {
     updateText: (updates: Partial<WidgetConfig["text"]>) => void;
     loadProject: (projectId: string) => void;
     saveProject: () => void;
+    renameProject: (name: string) => void;
 }
 
 const defaultConfig: WidgetConfig = {
@@ -136,6 +137,16 @@ export function WidgetProvider({ children }: { children: React.ReactNode }) {
         }
     }, [projectId, config]);
 
+    const renameProject = useCallback((newName: string) => {
+        if (!projectId) return;
+
+        const updatedProject = renameProjectStorage(projectId, newName);
+        if (updatedProject) {
+            setProjectName(updatedProject.name);
+            console.log("Project renamed successfully");
+        }
+    }, [projectId]);
+
     return (
         <WidgetContext.Provider
             value={{
@@ -149,6 +160,7 @@ export function WidgetProvider({ children }: { children: React.ReactNode }) {
                 updateText,
                 loadProject,
                 saveProject,
+                renameProject,
             }}
         >
             {children}
