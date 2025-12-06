@@ -42,6 +42,7 @@ interface WidgetContextType {
     projectName: string;
     config: WidgetConfig;
     hasUnsavedChanges: boolean;
+    isLoading: boolean;
     updateConfig: (updates: Partial<WidgetConfig>) => void;
     updateColors: (updates: Partial<WidgetConfig["colors"]>) => void;
     updateBranding: (updates: Partial<WidgetConfig["branding"]>) => void;
@@ -93,6 +94,7 @@ export function WidgetProvider({ children }: { children: React.ReactNode }) {
     const [config, setConfig] = useState<WidgetConfig>(defaultConfig);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [initialConfig, setInitialConfig] = useState<WidgetConfig>(defaultConfig);
+    const [isLoading, setIsLoading] = useState(false);
 
     const updateConfig = useCallback((updates: Partial<WidgetConfig>) => {
         setConfig((prev) => ({ ...prev, ...updates }));
@@ -129,54 +131,75 @@ export function WidgetProvider({ children }: { children: React.ReactNode }) {
         setHasUnsavedChanges(true);
     }, []);
 
-    const loadProject = useCallback((id: string) => {
+    const loadProject = useCallback(async (id: string) => {
         console.log("Loading project:", id);
-        const project = getProject(id);
-        console.log("Project loaded:", project);
-        if (project) {
-            setProjectId(project.id);
-            setProjectName(project.name);
-            setConfig(project.config);
-            setInitialConfig(project.config);
-            setHasUnsavedChanges(false);
+        setIsLoading(true);
+        try {
+            const project = await getProject(id);
+            console.log("Project loaded:", project);
 
-            // Immediately save to server storage to make it available for API
-            console.log("🔄 Syncing project to server storage for API access");
-            saveProjectStorage(project);
-        } else {
-            console.error("Project not found:", id);
+            if (project) {
+                setProjectId(project.id);
+                setProjectName(project.name);
+                setConfig(project.config);
+                setInitialConfig(project.config);
+                setHasUnsavedChanges(false);
+            } else {
+                console.error("Project not found:", id);
+                // Optionally handle 404 state here or fetch error
+            }
+        } catch (error) {
+            console.error("Error loading project:", error);
+        } finally {
+            setIsLoading(false);
         }
     }, []);
 
-    const saveProject = useCallback(() => {
+    const saveProject = useCallback(async () => {
         if (!projectId) {
             console.error("No project ID to save");
             return;
         }
 
         console.log("Saving project:", projectId);
-        const project = getProject(projectId);
-        if (project) {
-            const updatedProject: Project = {
-                ...project,
-                config,
-            };
-            saveProjectStorage(updatedProject);
-            setInitialConfig(config);
-            setHasUnsavedChanges(false);
-            console.log("Project saved successfully");
-        } else {
-            console.error("Project not found for saving:", projectId);
-        }
-    }, [projectId, config]);
+        try {
+            // Re-fetch to ensure we have the latest base data, or just use what we have
+            const currentProject = await getProject(projectId);
 
-    const renameProject = useCallback((newName: string) => {
+            if (currentProject) {
+                const updatedProject: Project = {
+                    ...currentProject,
+                    config,
+                    name: projectName // Ensure name is preserved
+                };
+
+                const saved = await saveProjectStorage(updatedProject);
+                if (saved) {
+                    setInitialConfig(config);
+                    setHasUnsavedChanges(false);
+                    console.log("Project saved successfully");
+                } else {
+                    console.error("Failed to save project");
+                }
+            } else {
+                console.error("Project not found for saving:", projectId);
+            }
+        } catch (error) {
+            console.error("Error saving project:", error);
+        }
+    }, [projectId, config, projectName]);
+
+    const renameProject = useCallback(async (newName: string) => {
         if (!projectId) return;
 
-        const updatedProject = renameProjectStorage(projectId, newName);
-        if (updatedProject) {
-            setProjectName(updatedProject.name);
-            console.log("Project renamed successfully");
+        try {
+            const updatedProject = await renameProjectStorage(projectId, newName);
+            if (updatedProject) {
+                setProjectName(updatedProject.name);
+                console.log("Project renamed successfully");
+            }
+        } catch (error) {
+            console.error("Error renaming project:", error);
         }
     }, [projectId]);
 
@@ -187,6 +210,7 @@ export function WidgetProvider({ children }: { children: React.ReactNode }) {
                 projectName,
                 config,
                 hasUnsavedChanges,
+                isLoading,
                 updateConfig,
                 updateColors,
                 updateBranding,

@@ -12,7 +12,10 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:3000
       - KNOWLEDGE_BASE_API_URL=http://knowledge-base:8000
       - AI_AGENT_API_URL=http://ai-agent:8001
+      - MONGODB_URI=mongodb://mongo:27017
+      - MONGODB_DB=chat-widget
     depends_on:
+      - mongo
       - knowledge-base
       - ai-agent
     networks:

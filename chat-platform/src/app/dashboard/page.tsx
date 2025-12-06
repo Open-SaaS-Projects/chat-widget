@@ -14,6 +14,7 @@ export default function DashboardPage() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingName, setEditingName] = useState<string>("");
+    const [loadingProjects, setLoadingProjects] = useState(true);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -23,58 +24,88 @@ export default function DashboardPage() {
 
     useEffect(() => {
         if (user) {
-            // Load projects from storage
-            const userProjects = getUserProjects(user.email);
-            setProjects(userProjects);
+            // Load projects from MongoDB
+            loadProjects();
         }
     }, [user]);
 
-    const createProject = () => {
-        if (!user) return;
-
-        // Create project with default configuration
-        const newProject = createProjectStorage(
-            user.email,
-            `My Project ${projects.length + 1}`,
-            {
-                position: "right",
-                websiteUrl: "",
-                colors: {
-                    primary: "#6320CE",
-                    header: "#6320CE",
-                    background: "#ffffff",
-                    foreground: "#000000",
-                    input: "#e5e7eb",
-                },
-                branding: {
-                    chatIcon: null,
-                    agentIcon: null,
-                    userIcon: null,
-                    showChatIcon: true,
-                    showAgentAvatar: true,
-                    showUserAvatar: true,
-                },
-                text: {
-                    headerTitle: "Chat Widget",
-                    welcomeMessage: "Hi! How can I help you?",
-                    placeholder: "Message...",
-                },
-            }
-        );
-
-        setProjects([...projects, newProject]);
-        router.push(`/project/${newProject.id}`);
+    const loadProjects = async () => {
+        try {
+            setLoadingProjects(true);
+            const userProjects = await getUserProjects();
+            setProjects(userProjects);
+        } catch (error) {
+            console.error('Error loading projects:', error);
+            setProjects([]);
+        } finally {
+            setLoadingProjects(false);
+        }
     };
 
-    const handleDeleteProject = (e: React.MouseEvent, projectId: string) => {
+    const createProject = async () => {
+        if (!user) return;
+
+        try {
+            // Create project with default configuration
+            const newProject = await createProjectStorage(
+                `My Project ${projects.length + 1}`,
+                {
+                    position: "right",
+                    websiteUrl: "",
+                    colors: {
+                        primary: "#6320CE",
+                        header: "#6320CE",
+                        background: "#ffffff",
+                        foreground: "#000000",
+                        input: "#e5e7eb",
+                    },
+                    branding: {
+                        chatIcon: null,
+                        agentIcon: null,
+                        userIcon: null,
+                        showChatIcon: true,
+                        showAgentAvatar: true,
+                        showUserAvatar: true,
+                    },
+                    text: {
+                        headerTitle: "Chat Widget",
+                        welcomeMessage: "Hi! How can I help you?",
+                        placeholder: "Message...",
+                    },
+                    persona: {
+                        tone: "friendly",
+                        agentType: "general",
+                        responseLength: "balanced",
+                        customInstructions: "",
+                    },
+                }
+            );
+
+            if (newProject) {
+                router.push(`/project/${newProject.id}`);
+            }
+        } catch (error) {
+            console.error('Error creating project:', error);
+            alert('Failed to create project. Please try again.');
+        }
+    };
+
+    const handleDeleteProject = async (e: React.MouseEvent, projectId: string) => {
         e.preventDefault();
         e.stopPropagation();
 
         if (!user) return;
 
         if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
-            deleteProject(user.email, projectId);
-            setProjects(projects.filter(p => p.id !== projectId));
+            try {
+                const success = await deleteProject(projectId);
+                if (success) {
+                    setProjects(projects.filter(p => p.id !== projectId));
+                }
+            } catch (error) {
+                console.error('Error deleting project:', error);
+                alert('Failed to delete project. Please try again.');
+            }
         }
     };
 
@@ -92,22 +123,34 @@ export default function DashboardPage() {
         setEditingName("");
     };
 
-    const saveRename = (e: React.MouseEvent, projectId: string) => {
+    const saveRename = async (e: React.MouseEvent, projectId: string) => {
         e.preventDefault();
         e.stopPropagation();
 
         if (!user || !editingName.trim()) return;
 
-        const updatedProject = renameProject(projectId, editingName.trim());
-        if (updatedProject) {
-            setProjects(projects.map(p => p.id === projectId ? updatedProject : p));
+        try {
+            const updatedProject = await renameProject(projectId, editingName.trim());
+            if (updatedProject) {
+                setProjects(projects.map(p => p.id === projectId ? updatedProject : p));
+            }
+            setEditingId(null);
+            setEditingName("");
+        } catch (error) {
+            console.error('Error renaming project:', error);
+            alert('Failed to rename project. Please try again.');
         }
-        setEditingId(null);
-        setEditingName("");
     };
 
-    if (loading || !user) {
-        return null; // Or a loading spinner
+    if (loading || !user || loadingProjects) {
+        return (
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+                </div>
+            </div>
+        );
     }
 
     return (

@@ -10,7 +10,7 @@ import Logo from "@/components/ui/Logo";
 
 export default function EditorPage({ params }: { params: Promise<{ id: string }> }) {
     const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
-    const { loadProject, saveProject, renameProject, hasUnsavedChanges, projectName } = useWidget();
+    const { loadProject, saveProject, renameProject, hasUnsavedChanges, projectName, isLoading, projectId } = useWidget();
     const [showSaved, setShowSaved] = useState(false);
     const [isRenaming, setIsRenaming] = useState(false);
     const [tempName, setTempName] = useState("");
@@ -53,6 +53,42 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
             handleRenameCancel();
         }
     };
+
+    if (isLoading) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-4 text-gray-600 dark:text-gray-400">Loading project...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!projectId && !isLoading) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+                <div className="text-center max-w-md px-4">
+                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 mb-4">
+                        <ArrowLeft className="h-6 w-6 text-red-600 dark:text-red-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">Project not found</h3>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        The project you are looking for does not exist or has been deleted.
+                    </p>
+                    <div className="mt-6">
+                        <Link
+                            href="/dashboard"
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                        >
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Dashboard
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">

@@ -9,6 +9,7 @@ from qdrant_client.http import models as qmodels
 from pymongo.database import Database
 from datetime import datetime
 import uuid
+import time
 
 app = FastAPI(
     title="Knowledge Base Service",
@@ -91,6 +92,9 @@ async def upload_file(
         # 5. Generate embeddings and save chunks to Qdrant
         points = []
         for i, chunk_text_content in enumerate(chunks):
+            # Rate limit mitigation for Free Tier
+            time.sleep(1)
+            
             embedding = generate_embedding(chunk_text_content)
             if embedding:
                 point_id = str(uuid.uuid4())
@@ -199,6 +203,10 @@ async def crawl_website(
         points = []
         for i, chunk_text_content in enumerate(chunks):
             print(f"🔢 Generating embedding for chunk {i+1}/{len(chunks)}")
+            
+            # Rate limit mitigation for Free Tier
+            time.sleep(1)
+            
             embedding = generate_embedding(chunk_text_content)
             if embedding:
                 point_id = str(uuid.uuid4())
