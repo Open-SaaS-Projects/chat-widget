@@ -1,0 +1,36 @@
+{
+  "id": "proj_mihjxof16kww2b6",
+  "userId": "shouman.eslam@gmail.com",
+  "name": "Prepit",
+  "config": {
+    "position": "right",
+    "websiteUrl": "https://www.prepitapp.com/",
+    "colors": {
+      "primary": "#14b1b5",
+      "header": "#129fa3",
+      "background": "#ffffff",
+      "foreground": "#000000",
+      "input": "#e5e7eb"
+    },
+    "branding": {
+      "chatIcon": null,
+      "agentIcon": null,
+      "userIcon": null,
+      "showChatIcon": false,
+      "showAgentAvatar": true,
+      "showUserAvatar": true
+    },
+    "text": {
+      "headerTitle": "Prepit Assistant",
+      "welcomeMessage": "Hi! How can I help you?",
+      "placeholder": "Message..."
+    },
+    "persona": {
+      "agentType": "technical",
+      "tone": "professional",
+      "responseLength": "short"
+    }
+  },
+  "createdAt": "2025-11-27T14:51:41.149Z",
+  "updatedAt": "2025-12-06T12:14:09.012Z"
+}

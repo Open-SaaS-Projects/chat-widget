@@ -212,7 +212,49 @@ Main navigation for the editor with three modes:
 - **BrandingPanel**: Icons and avatars
 - **ContentPanel**: Welcome message, placeholder
 - **WebsitePanel**: Website URL configuration
+- **WorkflowPanel**: Custom chat workflow builder (NEW)
 - **EmbedPanel**: Embed code generation
+
+### Workflow Panel (NEW)
+
+**Location**: `src/components/editor/panels/WorkflowPanel.tsx`
+
+Manage custom chat workflows:
+- Create/disable workflows
+- View workflow status and validation
+- Manage API whitelist for external integrations
+- Open visual workflow editor
+
+### Workflow Editor (NEW)
+
+**Location**: `src/components/editor/WorkflowEditor.tsx`
+
+Visual node-based workflow builder using React Flow:
+- **Node Palette**: 9 node types for building workflows
+- **Canvas**: Drag-and-drop interface with minimap and controls
+- **Validation**: Real-time workflow validation
+- **Save/Load**: Persist workflows to project configuration
+
+**Node Components** (`src/components/editor/workflow-nodes/`):
+- `StartNode.tsx` - Workflow entry point
+- `MessageNode.tsx` - Display messages
+- `UserInputNode.tsx` - Capture user input
+- `ConditionNode.tsx` - Branching logic
+- `AIAgentNode.tsx` - LLM integration
+- `APICallNode.tsx` - External API calls
+- `VariableSetNode.tsx` - Variable storage
+- `HandoffNode.tsx` - Transfer to human
+- `EndNode.tsx` - Workflow termination
+
+### Workflow Executor (NEW)
+
+**Location**: `src/lib/WorkflowExecutor.ts`
+
+Frontend execution engine for hybrid workflow execution:
+- Executes simple nodes locally (Message, Input, Condition, Variable Set)
+- Delegates complex nodes to backend (AI Agent, API Call, Handoff)
+- Manages workflow state and variables
+- Handles user input and node traversal
 
 ### Preview Area
 
@@ -250,6 +292,8 @@ interface WidgetConfig {
     position: 'left' | 'right';
     websiteUrl: string;
   };
+  workflow?: WorkflowDefinition; // NEW: Optional custom workflow
+  apiWhitelist?: string[]; // NEW: Allowed domains for API calls
 }
 ```
 
@@ -258,6 +302,8 @@ interface WidgetConfig {
 - `updateText(text)`: Update text content
 - `updateBranding(branding)`: Update icons/avatars
 - `updateSettings(settings)`: Update widget settings
+- `updateWorkflow(workflow)`: Update custom workflow (NEW)
+- `updateApiWhitelist(whitelist)`: Update API whitelist (NEW)
 - `saveProject()`: Save to localStorage
 - `loadProject(id)`: Load from localStorage
 

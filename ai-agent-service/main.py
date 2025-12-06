@@ -7,6 +7,8 @@ import json
 from services.kb_service import KBService
 from services.llm_service import LLMService
 from services.session_service import SessionService
+from services.workflow_executor import WorkflowExecutor
+from services.workflow_service import WorkflowService
 
 app = FastAPI(
     title="AI Agent Service",
@@ -27,6 +29,7 @@ app.add_middleware(
 kb_service = KBService()
 llm_service = LLMService()
 session_service = SessionService()
+workflow_service = WorkflowService()
 
 class ChatRequest(BaseModel):
     query: str
@@ -34,6 +37,7 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = "default"
     history: List[Dict[str, str]] = []
     persona: Optional[Dict[str, str]] = {}
+    workflow_state: Optional[Dict] = None  # For hybrid execution
 
 @app.get("/")
 async def root():
@@ -51,6 +55,49 @@ async def chat(request: ChatRequest):
     print(f"📨 Chat Request: query='{request.query}' project_id='{request.project_id}'")
     print(f"🎭 Persona Config: {json.dumps(request.persona, indent=2)}")
     
+    # Check if project has workflow (would come from project config in production)
+    # For now, we'll check if workflow_state is provided
+    if request.workflow_state:
+        # Hybrid execution: Frontend sent workflow state, execute backend node
+        print(f"🔄 Hybrid workflow execution for node: {request.workflow_state.get('currentNodeId')}")
+        
+        # Get workflow definition from project config (mock for now)
+        # In production, load from database/storage
+        workflow_def = request.workflow_state.get('workflow', {})
+        
+        if workflow_def:
+            executor = WorkflowExecutor(
+                workflow_definition=workflow_def,
+                session_id=request.session_id,
+                project_id=request.project_id,
+                llm_service=llm_service,
+                kb_service=kb_service
+            )
+            
+            # Load state from frontend
+            executor.load_state(request.workflow_state)
+            
+            # Execute current backend node
+            result = await executor.execute_current_node()
+            
+            # Save state to Redis
+            workflow_service.set_workflow_state(
+                request.project_id,
+                request.session_id,
+                executor.get_state()
+            )
+            
+            return {
+                "node_result": {
+                    "messages": result.messages,
+                    "nextNodeId": result.next_node_id,
+                    "variables": result.variables,
+                    "isComplete": result.is_complete
+                },
+                "session_id": request.session_id
+            }
+    
+    # Default behavior: No workflow, use existing LLM-based chat
     # 1. Get conversation history from Redis
     stored_history = session_service.get_conversation_history(request.project_id, request.session_id)
     

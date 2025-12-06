@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Paintbrush, Image as ImageIcon, Type, Settings, Code, Globe, Brain, MessageSquare, Rocket } from "lucide-react";
+import { Paintbrush, Image as ImageIcon, Type, Settings, Code, Globe, Brain, MessageSquare, Rocket, Workflow } from "lucide-react";
 import StylePanel from "./panels/StylePanel";
 import BrandingPanel from "./panels/BrandingPanel";
 import ContentPanel from "./panels/ContentPanel";
@@ -9,8 +9,9 @@ import SettingsPanel from "./panels/SettingsPanel";
 import EmbedPanel from "./panels/EmbedPanel";
 import WebsitePanel from "./panels/WebsitePanel";
 import BrainPanel from "./panels/BrainPanel";
+import WorkflowPanel from "./panels/WorkflowPanel";
 
-type Mode = "widget" | "brain" | "deployment";
+type Mode = "widget" | "brain" | "workflow" | "deployment";
 type WidgetTab = "style" | "content" | "website";
 
 export default function ConfigurationPanel() {
@@ -53,6 +54,17 @@ export default function ConfigurationPanel() {
                 >
                     <Brain className="h-4 w-4" />
                     <span className="text-sm font-medium">Knowledge Base</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveMode("workflow")}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all w-full text-left ${activeMode === "workflow"
+                        ? "bg-white dark:bg-gray-800 text-primary shadow-sm ring-1 ring-gray-200 dark:ring-gray-700"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                        }`}
+                >
+                    <Workflow className="h-4 w-4" />
+                    <span className="text-sm font-medium">Chat Workflow</span>
                 </button>
 
                 <button
@@ -133,6 +145,10 @@ export default function ConfigurationPanel() {
                 ) : activeMode === "brain" ? (
                     <div className="flex-1 overflow-y-auto">
                         <BrainPanel />
+                    </div>
+                ) : activeMode === "workflow" ? (
+                    <div className="flex-1 overflow-y-auto">
+                        <WorkflowPanel />
                     </div>
                 ) : (
                     <div className="flex-1 overflow-y-auto">

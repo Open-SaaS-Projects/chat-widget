@@ -60,6 +60,17 @@ This project consists of three main microservices:
 - **Session Management**: Persistent conversations across page reloads
 - **Document Processing**: Automatic text extraction and chunking
 - **Semantic Search**: Context-aware responses using embeddings
+- **Domain Restriction**: Secure widget deployment with origin validation (NEW)
+  - Configure allowed domains in deployment settings
+  - Prevents unauthorized widget usage on other websites
+  - Supports exact domain matching and wildcard subdomains
+  - Automatic localhost bypass for development
+- **Custom Chat Workflows**: Visual node-based workflow builder with hybrid execution
+  - 9 node types: Start, Message, User Input, Condition, AI Agent, API Call, Variable Set, Handoff, End
+  - Drag-and-drop visual editor using React Flow
+  - Hybrid execution: Frontend for simple nodes, backend for complex operations
+  - API whitelist security for external integrations
+  - Optional feature - projects work without workflows
 
 ## 🛠️ Technology Stack
 
@@ -69,6 +80,7 @@ This project consists of three main microservices:
 - **Styling**: Tailwind CSS
 - **UI Components**: Custom React components
 - **State Management**: React Context API
+- **Workflow Editor**: React Flow (node-based visual editor)
 
 ### Backend Services
 - **AI Agent**: Python FastAPI
@@ -244,6 +256,187 @@ docker-compose restart <service-name>
 3. **Knowledge Base Changes**: Edit files in `knowledge-base-service/`
 4. **Rebuild**: `docker-compose build <service>`
 5. **Restart**: `docker-compose restart <service>`
+
+## 🔒 Domain Restriction (NEW)
+
+Secure your chat widgets by restricting them to specific domains. This prevents unauthorized use on other websites.
+
+### How to Configure
+
+1. Open your project in the editor
+2. Go to **"Deployment"** tab
+3. Enter your allowed domain in the **"Domain Restriction"** section
+4. The widget will only work on that domain
+
+### Domain Formats
+
+**Exact Domain:**
+```
+https://example.com
+```
+Only works on `example.com`
+
+**Wildcard Subdomains:**
+```
+https://*.example.com
+```
+Works on all subdomains: `www.example.com`, `app.example.com`, etc.
+
+### Security Benefits
+
+- ✅ Prevents widget theft and unauthorized usage
+- ✅ Protects your API quota
+- ✅ Controls where your brand appears
+- ✅ Automatic validation on every chat request
+
+### Development Mode
+
+- Localhost is always allowed during development
+- Set `NODE_ENV=production` to enable validation in production
+
+## 🔄 Custom Chat Workflows (NEW)
+
+The platform now supports custom chat workflows with a visual node-based editor, allowing you to create sophisticated conversation flows beyond simple AI chat.
+
+### Overview
+
+Custom workflows enable you to:
+- Design complex conversation flows visually
+- Branch based on user input with conditions
+- Integrate external APIs securely
+- Combine AI responses with custom logic
+- Hand off to human agents when needed
+
+### Key Features
+
+- **Visual Editor**: Drag-and-drop interface using React Flow
+- **9 Node Types**: Complete toolkit for building workflows
+- **Hybrid Execution**: Frontend for speed, backend for security
+- **API Whitelist**: Secure external API integration
+- **Optional**: Projects work without workflows (backward compatible)
+
+### Node Types
+
+| Node | Type | Execution | Description |
+|------|------|-----------|-------------|
+| Start | Entry | Frontend | Workflow entry point |
+| Message | Display | Frontend | Send message to user |
+| User Input | Capture | Frontend | Wait for user input |
+| Condition | Logic | Frontend/Backend | Branch based on conditions |
+| AI Agent | AI | Backend | LLM with knowledge base |
+| API Call | Integration | Backend | External HTTP requests |
+| Variable Set | Data | Frontend | Store/update variables |
+| Handoff | Transfer | Backend | Transfer to human agent |
+| End | Exit | Frontend | Workflow termination |
+
+### How to Use
+
+#### 1. Create a Workflow
+
+1. Open a project in the editor
+2. Click **"Chat Workflow"** in the left navigation
+3. Click **"Create Workflow"** button
+4. The visual editor opens with a default workflow
+
+#### 2. Build Your Workflow
+
+1. **Add Nodes**: Click nodes from the palette on the left
+2. **Connect Nodes**: Drag from output handle (right) to input handle (left)
+3. **Configure Nodes**: Double-click nodes to edit properties (coming soon)
+4. **Validate**: Check validation status in the header
+5. **Save**: Click "Save Workflow" button
+
+#### 3. Configure API Whitelist (Optional)
+
+If using API Call nodes:
+
+1. In the Chat Workflow panel, click **"Manage"** under API Whitelist
+2. Enter allowed domains (e.g., `api.example.com` or `*.example.com`)
+3. Click **"Add"**
+4. API Call nodes will only work with whitelisted domains
+
+#### 4. Test Your Workflow
+
+1. Save the workflow
+2. Open the widget preview
+3. Test the conversation flow
+4. Iterate and refine
+
+### Architecture: Hybrid Execution
+
+Workflows use a hybrid execution model for optimal performance and security:
+
+**Frontend Execution** (Fast):
+- Start, Message, User Input, Condition (simple), Variable Set, End
+- Executes instantly in the browser
+- No network latency
+
+**Backend Execution** (Secure):
+- AI Agent, API Call, Handoff, Condition (complex)
+- Runs on the server
+- Access to LLM, knowledge base, and external APIs
+- No CORS issues
+
+**Flow**:
+```
+User Input → Frontend Executor → Simple Node? → Execute Locally
+                                ↓
+                         Complex Node? → Send to Backend
+                                ↓
+                         Backend Executor → Return Result
+                                ↓
+                         Frontend Continues → Next Node
+```
+
+### Example Workflows
+
+**Simple FAQ Bot**:
+```
+Start → Message ("Welcome!") → User Input → AI Agent → End
+```
+
+**Conditional Support**:
+```
+Start → User Input → Condition
+                      ├─ "billing" → API Call (Get Account) → Message
+                      ├─ "technical" → AI Agent → End
+                      └─ default → Handoff (Human Agent)
+```
+
+**API Integration**:
+```
+Start → User Input → API Call (External CRM) → Variable Set → Message → End
+```
+
+### Workflow State Management
+
+- **Session-based**: Each user session has independent workflow state
+- **Redis Storage**: State persisted in Redis with 24-hour TTL
+- **Variables**: Store and retrieve data across nodes
+- **History**: Track execution path for debugging
+
+### Disabling Workflows
+
+To revert to default AI chat:
+
+1. Go to Chat Workflow panel
+2. Click **"Disable Workflow"** at the bottom
+3. Confirm the action
+4. Widget returns to standard LLM + knowledge base behavior
+
+### Technical Details
+
+**Frontend Files**:
+- `src/lib/workflow-types.ts` - TypeScript type definitions
+- `src/lib/workflow-utils.ts` - Validation and utilities
+- `src/lib/WorkflowExecutor.ts` - Frontend execution engine
+- `src/components/editor/WorkflowEditor.tsx` - Visual editor
+- `src/components/editor/workflow-nodes/` - Custom node components
+
+**Backend Files**:
+- `services/workflow_executor.py` - Backend execution engine
+- `services/workflow_service.py` - Redis state management
+- `main.py` - API endpoint integration
 
 ## 🚢 Deployment
 

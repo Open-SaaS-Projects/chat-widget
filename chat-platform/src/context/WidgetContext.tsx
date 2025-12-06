@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { getProject, saveProject as saveProjectStorage, renameProject as renameProjectStorage, Project } from "@/lib/storage";
+import { WorkflowDefinition } from "@/lib/workflow-types";
 
 export interface WidgetConfig {
     position: "left" | "right";
@@ -32,6 +33,8 @@ export interface WidgetConfig {
         responseLength: string;
         customInstructions: string;
     };
+    workflow?: WorkflowDefinition; // Optional - for custom workflows
+    apiWhitelist?: string[]; // Optional - allowed domains for API calls
 }
 
 interface WidgetContextType {
@@ -44,6 +47,8 @@ interface WidgetContextType {
     updateBranding: (updates: Partial<WidgetConfig["branding"]>) => void;
     updateText: (updates: Partial<WidgetConfig["text"]>) => void;
     updatePersona: (updates: Partial<WidgetConfig["persona"]>) => void;
+    updateWorkflow: (workflow: WorkflowDefinition | undefined) => void;
+    updateApiWhitelist: (whitelist: string[]) => void;
     loadProject: (projectId: string) => void;
     saveProject: () => void;
     renameProject: (name: string) => void;
@@ -114,6 +119,16 @@ export function WidgetProvider({ children }: { children: React.ReactNode }) {
         setHasUnsavedChanges(true);
     }, []);
 
+    const updateWorkflow = useCallback((workflow: WorkflowDefinition | undefined) => {
+        setConfig((prev) => ({ ...prev, workflow }));
+        setHasUnsavedChanges(true);
+    }, []);
+
+    const updateApiWhitelist = useCallback((whitelist: string[]) => {
+        setConfig((prev) => ({ ...prev, apiWhitelist: whitelist }));
+        setHasUnsavedChanges(true);
+    }, []);
+
     const loadProject = useCallback((id: string) => {
         console.log("Loading project:", id);
         const project = getProject(id);
@@ -177,6 +192,8 @@ export function WidgetProvider({ children }: { children: React.ReactNode }) {
                 updateBranding,
                 updateText,
                 updatePersona,
+                updateWorkflow,
+                updateApiWhitelist,
                 loadProject,
                 saveProject,
                 renameProject,
