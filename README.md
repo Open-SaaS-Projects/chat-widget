@@ -89,9 +89,14 @@ This project consists of three main microservices:
 - **Embeddings**: Google Gemini Embedding Model
 
 ### Databases
-- **MongoDB**: Document metadata storage
+- **MongoDB**: Document metadata storage + **Project configurations, workflows, and settings** (NEW)
 - **Qdrant**: Vector database for semantic search
 - **Redis**: Session and conversation history storage
+
+**MongoDB Collections**:
+- `projects` - All project data (widget config, workflows, API whitelist, domain restrictions)
+- `documents` - Knowledge base document metadata
+- `chunks` - Document chunks for vector search
 
 ### Infrastructure
 - **Containerization**: Docker & Docker Compose
@@ -162,6 +167,8 @@ Open the test page: http://localhost:3000/widget/test.html
 |----------|-------------|---------|
 | `LITELLM_MODEL` | LLM model to use | `gemini/gemini-2.5-flash` |
 | `MONGO_URL` | MongoDB connection string | `mongodb://mongo:27017` |
+| `MONGODB_URI` | MongoDB URI (frontend) | `mongodb://mongo:27017` |
+| `MONGODB_DB` | MongoDB database name | `chat-widget` |
 | `QDRANT_URL` | Qdrant connection URL | `http://qdrant:6333` |
 | `REDIS_URL` | Redis connection string | `redis://redis:6379/0` |
 
@@ -256,6 +263,110 @@ docker-compose restart <service-name>
 3. **Knowledge Base Changes**: Edit files in `knowledge-base-service/`
 4. **Rebuild**: `docker-compose build <service>`
 5. **Restart**: `docker-compose restart <service>`
+
+## 💾 MongoDB Storage (NEW)
+
+All project data is now stored in MongoDB instead of localStorage or JSON files. This provides persistent, scalable, and production-ready storage.
+
+### Data Architecture
+
+**Database**: `chat-widget`  
+**Collection**: `projects`
+
+**Document Structure**:
+```javascript
+{
+  _id: ObjectId,
+  id: "proj_...",           // Unique project ID
+  name: "Project Name",
+  createdAt: Date,
+  updatedAt: Date,
+  config: {
+    // Widget Configuration
+    position: "left" | "right",
+    websiteUrl: "https://example.com",
+    
+    // Styling
+    colors: { primary, header, background, foreground, input },
+    branding: { chatIcon, agentIcon, userIcon, ... },
+    text: { headerTitle, welcomeMessage, placeholder },
+    
+    // AI Configuration
+    persona: { tone, agentType, responseLength, customInstructions },
+    
+    // Custom Workflows
+    workflow: {
+      nodes: [...],
+      edges: [...],
+      viewport: {...}
+    },
+    
+    // Security
+    apiWhitelist: ["domain.com", "*.trusted.com"]
+  }
+}
+```
+
+### API Endpoints
+
+All project operations use REST API endpoints:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/projects` | GET | List all projects |
+| `/api/projects` | POST | Create new project |
+| `/api/projects/[id]` | GET | Get project by ID |
+| `/api/projects/[id]` | PUT | Update project |
+| `/api/projects/[id]` | DELETE | Delete project |
+| `/api/projects/migrate` | POST | Migrate localStorage data |
+
+### Storage Benefits
+
+- ✅ **Persistent**: Data survives browser clears
+- ✅ **Multi-device**: Access projects from any device
+- ✅ **Scalable**: Production-ready database
+- ✅ **Backup**: Easy database backup/restore
+- ✅ **No Files**: No JSON file dependencies
+
+### Migration from localStorage
+
+If you have existing projects in localStorage:
+
+1. Open browser console at http://localhost:3000
+2. Load migration script:
+   ```javascript
+   const script = document.createElement('script');
+   script.src = '/migrate-to-mongodb.js';
+   document.head.appendChild(script);
+   ```
+3. Run migration:
+   ```javascript
+   await migrateToMongoDB()
+   ```
+4. Verify projects loaded
+5. (Optional) Clear localStorage:
+   ```javascript
+   clearLocalStorage()
+   ```
+
+### Database Management
+
+**View all projects**:
+```bash
+docker compose exec mongo mongosh
+use chat-widget
+db.projects.find().pretty()
+```
+
+**Count projects**:
+```bash
+db.projects.countDocuments()
+```
+
+**Backup database**:
+```bash
+docker compose exec mongo mongodump --db chat-widget --out /backup
+```
 
 ## 🔒 Domain Restriction (NEW)
 

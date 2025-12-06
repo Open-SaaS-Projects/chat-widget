@@ -42,6 +42,8 @@ The Chat Platform provides:
 │  │                 API Routes                         │ │
 │  │  - /api/chat (Proxy to AI Agent)                   │ │
 │  │  - /api/config/[id] (Widget Config)                │ │
+│  │  - /api/projects/* (MongoDB CRUD) (NEW)            │ │
+│  │  - /api/projects/migrate (Data Migration) (NEW)    │ │
 │  └────────────────────────────────────────────────────┘ │
 │                                                          │
 │  ┌────────────────────────────────────────────────────┐ │
@@ -353,6 +355,137 @@ Returns widget configuration for a project.
 ```
 
 **Usage**: Called by embeddable widget to load configuration.
+
+## 💾 MongoDB Storage (NEW)
+
+All project data is stored in MongoDB for persistent, production-ready storage.
+
+### Database Connection
+
+**File**: `src/lib/mongodb.ts`
+
+Provides MongoDB connection with:
+- Connection pooling
+- Hot reload support (development)
+- Error handling
+- Database instance getter
+
+### Project Model
+
+**File**: `src/lib/models/project.ts`
+
+Defines:
+- `Project` interface
+- `WidgetConfig` interface
+- `createDefaultProject()` - Create project with defaults
+- `validateProject()` - Validate project data
+
+### Storage API
+
+**File**: `src/lib/storage.ts`
+
+Provides async functions for project management:
+
+```typescript
+// Get all projects
+const projects = await getUserProjects();
+
+// Get single project
+const project = await getProject(projectId);
+
+// Create project
+const newProject = await createProject(name, config);
+
+// Update project
+const updated = await updateProject(projectId, { name, config });
+
+// Delete project
+await deleteProject(projectId);
+```
+
+### API Endpoints
+
+#### List Projects
+```
+GET /api/projects
+Response: { projects: Project[] }
+```
+
+#### Create Project
+```
+POST /api/projects
+Body: { name: string, config?: WidgetConfig }
+Response: { project: Project }
+```
+
+#### Get Project
+```
+GET /api/projects/[id]
+Response: { project: Project }
+```
+
+#### Update Project
+```
+PUT /api/projects/[id]
+Body: { name?: string, config?: WidgetConfig }
+Response: { project: Project }
+```
+
+#### Delete Project
+```
+DELETE /api/projects/[id]
+Response: { success: boolean }
+```
+
+#### Migrate Data
+```
+POST /api/projects/migrate
+Body: { projects: Project[] }
+Response: { results: { success, failed, errors } }
+```
+
+### Data Migration
+
+**From localStorage to MongoDB**:
+
+1. Load migration script in browser console:
+   ```javascript
+   const script = document.createElement('script');
+   script.src = '/migrate-to-mongodb.js';
+   document.head.appendChild(script);
+   ```
+
+2. Run migration:
+   ```javascript
+   await migrateToMongoDB()
+   ```
+
+3. Verify and optionally clear localStorage:
+   ```javascript
+   clearLocalStorage()
+   ```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MONGODB_URI` | MongoDB connection string | `mongodb://mongo:27017` |
+| `MONGODB_DB` | Database name | `chat-widget` |
+
+### Database Management
+
+**View projects**:
+```bash
+docker compose exec mongo mongosh
+use chat-widget
+db.projects.find().pretty()
+```
+
+**Create indexes**:
+```javascript
+db.projects.createIndex({ id: 1 }, { unique: true })
+db.projects.createIndex({ createdAt: -1 })
+```
 
 ## 📱 Embeddable Widget
 
