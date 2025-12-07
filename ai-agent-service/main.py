@@ -9,6 +9,10 @@ from services.llm_service import LLMService
 from services.session_service import SessionService
 from services.workflow_executor import WorkflowExecutor
 from services.workflow_service import WorkflowService
+from services.database_service import DatabaseService
+from services.tools_service import ToolsService
+from models.db_connection import CreateDatabaseConnectionRequest
+from models.tool_action import CreateAgentActionRequest
 
 app = FastAPI(
     title="AI Agent Service",
@@ -27,9 +31,11 @@ app.add_middleware(
 
 # Services
 kb_service = KBService()
-llm_service = LLMService()
 session_service = SessionService()
 workflow_service = WorkflowService()
+database_service = DatabaseService()
+tools_service = ToolsService(database_service)
+llm_service = LLMService(tools_service) # Inject tools_service
 
 class ChatRequest(BaseModel):
     query: str
@@ -49,6 +55,50 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+# --- Database Connection Management ---
+@app.post("/projects/{project_id}/db-connection")
+async def create_db_connection(project_id: str, request: CreateDatabaseConnectionRequest):
+    """Save a database connection configuration."""
+    try:
+        connection = database_service.save_connection(project_id, request)
+        # Don't return the password
+        response = connection.model_dump()
+        response.pop("encrypted_password")
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/projects/{project_id}/db-connection")
+async def get_db_connections(project_id: str):
+    """Get all connections for a project."""
+    return database_service.get_connections(project_id)
+
+@app.post("/projects/{project_id}/db-connection/{connection_id}/test")
+async def test_db_connection(project_id: str, connection_id: str):
+    """Test a database connection."""
+    try:
+        success = database_service.test_connection(project_id, connection_id)
+        return {"success": success}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+# --- Action (Tools) Management ---
+@app.post("/projects/{project_id}/actions")
+async def create_action(project_id: str, request: CreateAgentActionRequest):
+    """Create a new Named SQL Action (Tool)."""
+    try:
+        action = tools_service.create_action(project_id, request)
+        return action
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/projects/{project_id}/actions")
+async def get_actions(project_id: str):
+    """List all actions for a project."""
+    return tools_service.get_actions(project_id)
+
+# --- Chat Endpoints ---
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
@@ -108,7 +158,14 @@ async def chat(request: ChatRequest):
     context = await kb_service.get_relevant_context(request.query, request.project_id)
     
     # 3. Generate response using LLM with conversation history and persona
-    response = await llm_service.generate_response(request.query, context, conversation_history, request.persona)
+    # IMPORTANT: Passing project_id to enable tool usage specific to this project
+    response = await llm_service.generate_response(
+        query=request.query, 
+        context_chunks=context, 
+        history=conversation_history, 
+        persona_config=request.persona,
+        project_id=request.project_id
+    )
     
     # 4. Update conversation history in Redis
     session_service.add_message_to_history(request.project_id, request.session_id, "user", request.query)
@@ -143,7 +200,13 @@ async def websocket_endpoint(websocket: WebSocket, project_id: str):
             
             # 2. Stream response
             full_response = ""
-            async for chunk in llm_service.generate_stream_response(query, context, history):
+            # IMPORTANT: Passing project_id to enable tool usage
+            async for chunk in llm_service.generate_stream_response(
+                query=query, 
+                context_chunks=context, 
+                history=history,
+                project_id=project_id
+            ):
                 full_response += chunk
                 await websocket.send_text(json.dumps({
                     "type": "chunk",

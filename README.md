@@ -71,6 +71,12 @@ This project consists of three main microservices:
   - Hybrid execution: Frontend for simple nodes, backend for complex operations
   - API whitelist security for external integrations
   - Optional feature - projects work without workflows
+- **Safe Data Integrations**: Securely connect the AI to business data
+  - **Database Integration**: Execute safe, parameterized SQL queries on PostgreSQL/MySQL
+  - **API Integration**: Connect to external REST APIs without sharing database credentials
+  - **Zero-Trust**: AI can only execute pre-defined, named "Tools" (Actions)
+  - **Encryption**: Credentials encrypted at rest using Fernet
+
 
 ## 🛠️ Technology Stack
 
@@ -404,6 +410,29 @@ Works on all subdomains: `www.example.com`, `app.example.com`, etc.
 
 - Localhost is always allowed during development
 - Set `NODE_ENV=production` to enable validation in production
+
+## 🔌 Safe Data Integrations (NEW)
+
+Empower your AI agent to securely access your business data without exposing direct database access to the LLM.
+
+### Features
+1.  **Named Actions**: You define specific tools (e.g., `get_order_status`, `search_products`) with strict parameters. The AI can only call these tools, not write arbitrary SQL.
+2.  **Multiple Sources**:
+    *   **Database**: PostgreSQL and MySQL supported.
+    *   **API**: REST API endpoints (GET/POST/PUT/DELETE).
+3.  **Security**:
+    *   Database passwords encrypted at rest.
+    *   SQL injection protection via parameterized queries.
+    *   No direct schema exposure to the AI.
+
+### How to Configure
+1.  Go to **"Brain"** -> **"Data Accessing"**.
+2.  **Add Connection**: Enter your database credentials (host, port, user, pass).
+3.  **Add Action**:
+    *   *Type*: Choose "Database Query" or "API Request".
+    *   *Query/URL*: Define the SQL (`SELECT * FROM orders WHERE id=:id`) or API URL (`https://api.site.com/orders/:id`).
+    *   *Parameters*: Define JSON schema for the inputs (e.g., `id` is required integer).
+4.  **Use in Chat**: The AI will automatically detect when to use the tool based on user questions (e.g., "Where is my order #123?").
 
 ## 🔄 Custom Chat Workflows (NEW)
 

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Upload, FileText, Trash2, Loader2, Brain, Globe, Link as LinkIcon, User, TestTube, MessageSquare, Sparkles, Save } from "lucide-react";
+import { Upload, FileText, Trash2, Loader2, Brain, Globe, Link as LinkIcon, User, Database, MessageSquare, Sparkles, Save } from "lucide-react";
 import { useWidget } from "@/context/WidgetContext";
 import { uploadFile, crawlWebsite, getDocuments, deleteDocument, Document } from "@/lib/api";
+import DatabasePanel from "./DatabasePanel";
 
-type Tab = "feeding" | "persona" | "testing";
+type Tab = "feeding" | "persona" | "database";
 
 export default function BrainPanel() {
     const { projectId, config, updatePersona, saveProject } = useWidget();
@@ -114,14 +115,14 @@ export default function BrainPanel() {
                     Persona Building
                 </button>
                 <button
-                    onClick={() => setActiveTab("testing")}
-                    className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "testing"
+                    onClick={() => setActiveTab("database")}
+                    className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "database"
                         ? "border-primary text-primary"
                         : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         }`}
                 >
-                    <TestTube className="h-4 w-4" />
-                    Testing
+                    <Database className="h-4 w-4" />
+                    Database Accessing
                 </button>
             </div>
 
@@ -365,14 +366,8 @@ export default function BrainPanel() {
                     </div>
                 )}
 
-                {activeTab === "testing" && (
-                    <div className="flex flex-col items-center justify-center h-64 text-center">
-                        <TestTube className="h-12 w-12 text-gray-200 dark:text-gray-700 mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Testing Playground</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                            Test your knowledge base retrieval accuracy here.
-                        </p>
-                    </div>
+                {activeTab === "database" && (
+                    <DatabasePanel />
                 )}
             </div>
         </div>

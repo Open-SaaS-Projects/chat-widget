@@ -257,10 +257,161 @@ export default function WorkflowEditor({ workflow, onSave, onClose, apiWhitelist
                                 </div>
 
                                 {/* Node-specific configuration will be handled by each node component */}
-                                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        Double-click the node to edit its properties
-                                    </p>
+                                {/* Node Configuration Inputs */}
+                                <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-4">
+                                    <h4 className="text-xs font-semibold text-gray-500 uppercase">Configuration</h4>
+
+                                    {/* Message Node */}
+                                    {selectedNode.type === 'message' && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Message</label>
+                                            <textarea
+                                                value={selectedNode.data.message as string || ''}
+                                                onChange={(e) => handleNodeDataChange(selectedNode.id, { message: e.target.value })}
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary focus:border-transparent h-24 resize-none"
+                                                placeholder="Enter message text..."
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* User Input Node */}
+                                    {selectedNode.type === 'input' && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Prompt</label>
+                                            <input
+                                                type="text"
+                                                value={selectedNode.data.prompt as string || ''}
+                                                onChange={(e) => handleNodeDataChange(selectedNode.id, { prompt: e.target.value })}
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                placeholder="e.g. How can I help?"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* AI Agent Node */}
+                                    {selectedNode.type === 'ai-agent' && (
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id="useKB"
+                                                    checked={selectedNode.data.useKnowledgeBase as boolean}
+                                                    onChange={(e) => handleNodeDataChange(selectedNode.id, { useKnowledgeBase: e.target.checked })}
+                                                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                                                />
+                                                <label htmlFor="useKB" className="text-sm text-gray-700 dark:text-gray-300">Use Knowledge Base</label>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Custom Prompt (Optional)</label>
+                                                <textarea
+                                                    value={selectedNode.data.prompt as string || ''}
+                                                    onChange={(e) => handleNodeDataChange(selectedNode.id, { prompt: e.target.value })}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary focus:border-transparent h-24 resize-none"
+                                                    placeholder="Override default agent behavior..."
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* API Call Node */}
+                                    {selectedNode.type === 'api-call' && (
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Method</label>
+                                                <select
+                                                    value={selectedNode.data.method as string}
+                                                    onChange={(e) => handleNodeDataChange(selectedNode.id, { method: e.target.value })}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                                                >
+                                                    <option value="GET">GET</option>
+                                                    <option value="POST">POST</option>
+                                                    <option value="PUT">PUT</option>
+                                                    <option value="DELETE">DELETE</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
+                                                <input
+                                                    type="text"
+                                                    value={selectedNode.data.url as string || ''}
+                                                    onChange={(e) => handleNodeDataChange(selectedNode.id, { url: e.target.value })}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                                                    placeholder="https://api.example.com..."
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Headers (JSON)</label>
+                                                <input
+                                                    type="text"
+                                                    value={typeof selectedNode.data.headers === 'string' ? selectedNode.data.headers : JSON.stringify(selectedNode.data.headers || {})}
+                                                    onChange={(e) => {
+                                                        try {
+                                                            const val = e.target.value;
+                                                            // Store as string, parse on save if needed or keep flexible
+                                                            handleNodeDataChange(selectedNode.id, { headers: val });
+                                                        } catch (e) { }
+                                                    }}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 font-mono"
+                                                    placeholder="{}"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Response Variable</label>
+                                                <input
+                                                    type="text"
+                                                    value={selectedNode.data.responseVariable as string || 'api_response'}
+                                                    onChange={(e) => handleNodeDataChange(selectedNode.id, { responseVariable: e.target.value })}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                                                    placeholder="api_response"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Variable Set Node */}
+                                    {selectedNode.type === 'variable-set' && (
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Variable Name</label>
+                                                <input
+                                                    type="text"
+                                                    value={selectedNode.data.variableName as string || ''}
+                                                    onChange={(e) => handleNodeDataChange(selectedNode.id, { variableName: e.target.value })}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                                                    placeholder="my_var"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Value</label>
+                                                <input
+                                                    type="text"
+                                                    value={selectedNode.data.value as string || ''}
+                                                    onChange={(e) => handleNodeDataChange(selectedNode.id, { value: e.target.value })}
+                                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                                                    placeholder="some value"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Handoff Node */}
+                                    {selectedNode.type === 'handoff' && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Target</label>
+                                            <select
+                                                value={selectedNode.data.target as string}
+                                                onChange={(e) => handleNodeDataChange(selectedNode.id, { target: e.target.value })}
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                                            >
+                                                <option value="human">Human Agent</option>
+                                                <option value="department">Department</option>
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    <div className="pt-4 text-[10px] text-gray-400">
+                                        Changes are applied immediately. Remember to save the workflow.
+                                    </div>
                                 </div>
                             </div>
                         </div>
