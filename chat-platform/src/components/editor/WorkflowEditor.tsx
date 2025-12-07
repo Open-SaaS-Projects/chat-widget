@@ -114,9 +114,9 @@ export default function WorkflowEditor({ workflow, onSave, onClose, apiWhitelist
     };
 
     const handleAddNode = (type: string) => {
-        const newNode: Node = {
+        const newNode = {
             id: `${type}-${Date.now()}`,
-            type,
+            type: type as any,
             position: { x: 250, y: 100 + nodes.length * 50 },
             data: getDefaultNodeData(type),
         };

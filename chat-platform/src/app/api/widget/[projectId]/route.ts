@@ -11,7 +11,7 @@ export async function GET(
     console.log("🔍 API: Fetching project:", projectId);
 
     // Fetch project from storage
-    const project = getServerProject(projectId);
+    const project = await getServerProject(projectId);
 
     if (!project) {
         console.error("❌ API: Project not found:", projectId);

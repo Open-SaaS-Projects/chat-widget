@@ -101,10 +101,10 @@ export async function updateProject(projectId: string, updates: Partial<{ name: 
 /**
  * Save/update entire project in MongoDB via API
  */
-export async function saveProject(project: Partial<Project>): Promise<void> {
+export async function saveProject(project: Partial<Project>): Promise<boolean> {
     if (!project.id) {
         console.error('Cannot save project without ID');
-        return;
+        return false;
     }
 
     console.log("💾 Saving project:", project.id);
@@ -116,8 +116,10 @@ export async function saveProject(project: Partial<Project>): Promise<void> {
             config: project.config,
         });
         console.log("✅ Project saved successfully");
+        return true;
     } catch (error) {
         console.error("❌ Failed to save project:", error);
+        return false;
     }
 }
 
